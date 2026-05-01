@@ -1,9 +1,13 @@
 import { auth, signOut } from "@/auth"
 import { redirect } from "next/navigation"
+import { getConfig } from "@/lib/config"
+import AdminForms from "./AdminForms"
 
 export default async function AdminPage() {
   const session = await auth()
   if (!session) redirect("/admin/login")
+
+  const config = await getConfig()
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -49,7 +53,15 @@ export default async function AdminPage() {
         </form>
       </header>
 
-      <main />
+      <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px 64px" }}>
+        <div style={{ marginBottom: 28 }}>
+          <h2 style={{ color: "var(--green-800)", fontSize: "1.4rem", marginBottom: 4 }}>Site Content</h2>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
+            Changes are applied immediately to the live site.
+          </p>
+        </div>
+        <AdminForms config={config} />
+      </main>
     </div>
   )
 }

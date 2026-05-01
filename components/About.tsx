@@ -1,3 +1,5 @@
+import { getConfig } from '@/lib/config'
+
 function CheckIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
@@ -7,41 +9,37 @@ function CheckIcon() {
   )
 }
 
-export default function About() {
+export default async function About() {
+  const { pharmacist } = await getConfig()
+
+  const initials = pharmacist.name
+    .split(' ')
+    .filter((w) => !w.endsWith('.'))
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+
+  const paragraphs = pharmacist.profileDescription.split('\n\n').filter(Boolean)
+
   return (
     <section className="section section--alt" id="about">
       <div className="container about-inner">
 
         <div className="about-visual reveal">
-          <div className="about-photo"><span>AA</span></div>
+          <div className="about-photo"><span>{initials}</span></div>
           <ul className="credentials" role="list">
-            <li><CheckIcon /> B.Pharm — University of Lagos</li>
-            <li><CheckIcon /> PCN Registered Pharmacist</li>
-            <li><CheckIcon /> Certified Cosmetic Formulator</li>
-            <li><CheckIcon /> 10+ Years Clinical Experience</li>
+            {pharmacist.credentials.map((c) => (
+              <li key={c}><CheckIcon /> {c}</li>
+            ))}
           </ul>
         </div>
 
         <div className="about-content reveal reveal--delay">
           <span className="section-label">Meet Your Pharmacist</span>
-          <h2>Pharm. Aminu<br />Abdulsalam</h2>
-          <p>
-            Pharm. Aminu Abdulsalam is a registered pharmacist with extensive expertise in
-            pharmaceutical care, patient counseling, and cosmetic formulation. As the founder of
-            Kardinal Pharmacy, he has spent over a decade providing affordable, high-quality
-            healthcare to the Ijegun community.
-          </p>
-          <p>
-            His practice is grounded in the belief that every patient deserves undivided attention.
-            He takes the time to understand each individual&apos;s health history, lifestyle, and
-            needs — then crafts solutions that genuinely make a difference, not just fill a
-            prescription.
-          </p>
-          <p>
-            Beyond clinical pharmacy, Pharm. Aminu is a passionate cosmetic chemist, developing
-            a growing line of personal care products formulated specifically for Nigerian skin and
-            tropical conditions — combining scientific rigour with the warmth of local knowledge.
-          </p>
+          <h2>{pharmacist.name}</h2>
+          {paragraphs.map((para, i) => (
+            <p key={i}>{para}</p>
+          ))}
           <a href="#location" className="btn btn--primary">Schedule a Consultation</a>
         </div>
 

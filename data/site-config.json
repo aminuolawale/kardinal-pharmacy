@@ -1,0 +1,80 @@
+{
+  "siteTitle": "Kardinal Pharmacy",
+  "hero": {
+    "headlinePrimary": "Your Health,",
+    "headlineEmphasis": "Our Commitment.",
+    "subtitle": "Expert pharmaceutical consultations, prescription dispensing, and bespoke cosmetic products — from a trusted, registered pharmacist in the heart of Lagos."
+  },
+  "pharmacist": {
+    "name": "Pharm. Aminu Abdulsalam",
+    "description": "Registered Pharmacist & Cosmetic Formulator",
+    "credentials": ["PCN Licensed", "NAFDAC Reg.", "10+ Yrs Exp."],
+    "profileDescription": "Pharm. Aminu Abdulsalam is a registered pharmacist with extensive expertise in pharmaceutical care, patient counseling, and cosmetic formulation. As the founder of Kardinal Pharmacy, he has spent over a decade providing affordable, high-quality healthcare to the Ijegun community.\n\nHis practice is grounded in the belief that every patient deserves undivided attention. He takes the time to understand each individual's health history, lifestyle, and needs — then crafts solutions that genuinely make a difference, not just fill a prescription.\n\nBeyond clinical pharmacy, Pharm. Aminu is a passionate cosmetic chemist, developing a growing line of personal care products formulated specifically for Nigerian skin and tropical conditions — combining scientific rigour with the warmth of local knowledge."
+  },
+  "services": {
+    "headline": "Comprehensive Care Under One Roof",
+    "subtitle": "From your first health question to your last prescription, we are with you every step of the way.",
+    "items": [
+      {
+        "id": "s1",
+        "title": "Pharmaceutical Consultations",
+        "description": "Receive personalised, evidence-based guidance on medications, dosage, drug interactions, and health management from a licensed pharmacist."
+      },
+      {
+        "id": "s2",
+        "title": "Prescription Services",
+        "description": "Accurate, efficient dispensing of your prescriptions paired with thorough medication counseling so you understand your treatment and achieve the best outcomes."
+      },
+      {
+        "id": "s3",
+        "title": "Cosmetic Manufacturing",
+        "description": "Bespoke personal care and cosmetic products manufactured in-house using pharmaceutical-grade ingredients, formulated for safety, quality, and the Nigerian climate."
+      }
+    ]
+  },
+  "trust": {
+    "items": [
+      {
+        "id": "t1",
+        "title": "Licensed & Certified",
+        "description": "Fully registered with the Pharmacists Council of Nigeria (PCN) and compliant with all NAFDAC regulations."
+      },
+      {
+        "id": "t2",
+        "title": "Patient-Centred Care",
+        "description": "Every consultation is personal. We take time to understand your specific needs and never rush your care."
+      },
+      {
+        "id": "t3",
+        "title": "In-House Manufacturing",
+        "description": "Our cosmetics are manufactured under strict pharmaceutical conditions, ensuring purity, potency, and safety."
+      },
+      {
+        "id": "t4",
+        "title": "Community Rooted",
+        "description": "Born in Ijegun, built for Lagos. We understand local health challenges and are committed to accessible care."
+      }
+    ]
+  },
+  "cosmeticLine": {
+    "headline": "Pharmaceutical-Grade Cosmetics, Made in Lagos",
+    "subtitle": "Every product is formulated by our pharmacist using rigorously tested, pharmaceutical-quality ingredients — designed specifically for Nigerian skin and climatic conditions.",
+    "items": [
+      {
+        "id": "p1",
+        "title": "Skincare Range",
+        "description": "Gentle, effective formulations for cleansing, moisturising, and protecting your skin — free from harmful bleaching agents and harsh chemicals."
+      },
+      {
+        "id": "p2",
+        "title": "Body Care",
+        "description": "Rich body creams, lotions, and oils crafted to deeply nourish and protect your skin through Lagos's heat and humidity."
+      },
+      {
+        "id": "p3",
+        "title": "Hair & Scalp",
+        "description": "Specialised formulations to promote scalp health, strengthen hair, and address common concerns like dryness, breakage, and dandruff."
+      }
+    ]
+  }
+}

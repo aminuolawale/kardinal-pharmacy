@@ -1,4 +1,3 @@
-import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
 
@@ -9,12 +8,6 @@ const poppins = Poppins({
   variable: '--font-poppins',
   display: 'swap',
 })
-
-export const metadata: Metadata = {
-  title: 'Kardinal Pharmacy — Ijegun, Lagos',
-  description:
-    'Professional pharmaceutical consultations, prescription services and bespoke cosmetic products in Ijegun, Lagos. Led by Pharm. Aminu Abdulsalam.',
-}
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
