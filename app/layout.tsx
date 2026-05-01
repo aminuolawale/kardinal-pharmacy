@@ -1,10 +1,6 @@
 import type { Metadata } from 'next'
 import { Poppins } from 'next/font/google'
 import './globals.css'
-import Nav from '@/components/Nav'
-import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
-import ScrollReveal from '@/components/ScrollReveal'
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -23,13 +19,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={poppins.variable}>
-      <body>
-        <Nav />
-        {children}
-        <Footer />
-        <WhatsAppButton />
-        <ScrollReveal />
-      </body>
+      <body>{children}</body>
     </html>
   )
 }
