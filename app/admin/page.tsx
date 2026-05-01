@@ -53,15 +53,7 @@ export default async function AdminPage() {
         </form>
       </header>
 
-      <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 20px 64px" }}>
-        <div style={{ marginBottom: 28 }}>
-          <h2 style={{ color: "var(--green-800)", fontSize: "1.4rem", marginBottom: 4 }}>Site Content</h2>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-muted)" }}>
-            Changes are applied immediately to the live site.
-          </p>
-        </div>
-        <AdminForms config={config} />
-      </main>
+      <AdminForms config={config} />
     </div>
   )
 }

@@ -26,7 +26,12 @@ export default async function About() {
       <div className="container about-inner">
 
         <div className="about-visual reveal">
-          <div className="about-photo"><span>{initials}</span></div>
+          <div className="about-photo" style={pharmacist.avatarUrl ? { overflow: 'hidden', padding: 0 } : {}}>
+            {pharmacist.avatarUrl
+              ? <img src={pharmacist.avatarUrl} alt={pharmacist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span>{initials}</span>
+            }
+          </div>
           <ul className="credentials" role="list">
             {pharmacist.credentials.map((c) => (
               <li key={c}><CheckIcon /> {c}</li>

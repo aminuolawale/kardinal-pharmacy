@@ -27,7 +27,12 @@ export default async function Hero() {
         </div>
 
         <div className="hero__card reveal reveal--delay">
-          <div className="hero__avatar"><span>{initials}</span></div>
+          <div className="hero__avatar" style={pharmacist.avatarUrl ? { overflow: 'hidden', padding: 0 } : {}}>
+            {pharmacist.avatarUrl
+              ? <img src={pharmacist.avatarUrl} alt={pharmacist.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <span>{initials}</span>
+            }
+          </div>
           <p className="hero__card-name">{pharmacist.name}</p>
           <p className="hero__card-role">{pharmacist.description}</p>
           <div className="hero__badges">

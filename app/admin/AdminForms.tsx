@@ -8,15 +8,26 @@ import {
   saveServices,
   saveTrust,
   saveCosmeticLine,
+  uploadAvatar,
 } from './actions'
 
-/* ── Shared styles ──────────────────────────────────────── */
+/* ── Section nav ──────────────────────────────────────────── */
+type SectionId = 'site' | 'hero' | 'pharmacist' | 'services' | 'trust' | 'cosmetic'
+const SECTIONS: { id: SectionId; label: string }[] = [
+  { id: 'site',        label: 'Site' },
+  { id: 'hero',        label: 'Hero' },
+  { id: 'pharmacist',  label: 'Pharmacist' },
+  { id: 'services',    label: 'Services' },
+  { id: 'trust',       label: 'Why Kardinal' },
+  { id: 'cosmetic',    label: 'Cosmetic Line' },
+]
+
+/* ── Shared styles ────────────────────────────────────────── */
 const S = {
   card: {
     background: 'var(--white)',
     borderRadius: 'var(--radius)',
     boxShadow: 'var(--shadow)',
-    marginBottom: 20,
     overflow: 'hidden',
   } as React.CSSProperties,
   cardHead: {
@@ -117,7 +128,7 @@ const S = {
   } as React.CSSProperties,
 }
 
-/* ── Primitives ─────────────────────────────────────────── */
+/* ── Primitives ───────────────────────────────────────────── */
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={S.card}>
@@ -200,7 +211,60 @@ function CredentialsList({ items, onChange }: { items: string[]; onChange: (item
   )
 }
 
-/* ── Section components ─────────────────────────────────── */
+function AvatarUpload({ current, initials }: { current: string; initials: string }) {
+  const [preview, setPreview] = useState<string | null>(current || null)
+  const [isPending, startTransition] = useTransition()
+  const [done, setDone] = useState(false)
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(file)
+    const fd = new FormData()
+    fd.append('avatar', file)
+    startTransition(async () => {
+      await uploadAvatar(fd)
+      setDone(true)
+      setTimeout(() => setDone(false), 2000)
+    })
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: '50%',
+        background: 'var(--green-800)', overflow: 'hidden',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontWeight: 700, color: 'var(--white)', fontSize: '1.2rem',
+        flexShrink: 0, border: '3px solid var(--border)',
+      }}>
+        {preview
+          ? <img src={preview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span>{initials}</span>
+        }
+      </div>
+      <div>
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: 'var(--green-50)', border: '1.5px solid var(--border)',
+          borderRadius: 'var(--radius-sm)', padding: '8px 14px',
+          fontSize: '0.85rem', cursor: isPending ? 'not-allowed' : 'pointer',
+          fontFamily: 'var(--font)', color: 'var(--green-800)', fontWeight: 500,
+        }}>
+          {isPending ? 'Uploading…' : done ? 'Uploaded ✓' : '↑  Upload Photo'}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} disabled={isPending} />
+        </label>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+          JPG, PNG or WebP · replaces the initials on the live site
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/* ── Section forms ────────────────────────────────────────── */
 function SiteTitleSection({ initial }: { initial: string }) {
   const [value, setValue] = useState(initial)
   const [isPending, startTransition] = useTransition()
@@ -263,9 +327,16 @@ function PharmacistSection({ initial }: { initial: SiteConfig['pharmacist'] }) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
+  const initials = name
+    .split(' ')
+    .filter((w) => !w.endsWith('.'))
+    .map((w) => w[0])
+    .join('')
+    .slice(0, 2)
+
   const handleSave = () => {
     startTransition(async () => {
-      await savePharmacist({ name, description, credentials, profileDescription })
+      await savePharmacist({ name, description, credentials, profileDescription, avatarUrl: initial.avatarUrl })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     })
@@ -273,16 +344,19 @@ function PharmacistSection({ initial }: { initial: SiteConfig['pharmacist'] }) {
 
   return (
     <SectionCard title="Pharmacist">
+      <Field label="Photo">
+        <AvatarUpload current={initial.avatarUrl} initials={initials} />
+      </Field>
       <Field label="Full Name">
         <input value={name} onChange={(e) => setName(e.target.value)} style={S.input} />
       </Field>
       <Field label="Role / Description">
         <input value={description} onChange={(e) => setDescription(e.target.value)} style={S.input} />
       </Field>
-      <Field label="Credentials (shown as badges on hero card and checklist on about page)">
+      <Field label="Credentials (appear as badges on hero and checklist on about page)">
         <CredentialsList items={credentials} onChange={setCredentials} />
       </Field>
-      <Field label="Profile description (use a blank line between paragraphs)">
+      <Field label="Profile description (blank line between paragraphs)">
         <textarea
           value={profileDescription}
           onChange={(e) => setProfileDescription(e.target.value)}
@@ -302,10 +376,10 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
-  const addItem = () => setItems((prev) => [...prev, { id: crypto.randomUUID(), title: '', description: '' }])
-  const removeItem = (id: string) => setItems((prev) => prev.filter((it) => it.id !== id))
+  const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
+  const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
   const updateItem = (id: string, field: 'title' | 'description', value: string) =>
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
+    setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
     startTransition(async () => {
@@ -316,7 +390,7 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
   }
 
   return (
-    <SectionCard title={`Services — What We Offer (${items.length} item${items.length !== 1 ? 's' : ''}${items.length > 3 ? ' · carousel active' : ''})`}>
+    <SectionCard title={`Services · What We Offer${items.length > 3 ? '  (carousel active)' : ''}`}>
       <Field label="Headline">
         <input value={headline} onChange={(e) => setHeadline(e.target.value)} style={S.input} />
       </Field>
@@ -324,7 +398,7 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
         <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} style={S.textarea} rows={2} />
       </Field>
       <div style={S.field}>
-        <label style={S.label}>Services</label>
+        <label style={S.label}>Services ({items.length})</label>
         <ItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} addLabel="Add Service" />
       </div>
       <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
@@ -337,10 +411,10 @@ function TrustSection({ initial }: { initial: SiteConfig['trust'] }) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
-  const addItem = () => setItems((prev) => [...prev, { id: crypto.randomUUID(), title: '', description: '' }])
-  const removeItem = (id: string) => setItems((prev) => prev.filter((it) => it.id !== id))
+  const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
+  const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
   const updateItem = (id: string, field: 'title' | 'description', value: string) =>
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
+    setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
     startTransition(async () => {
@@ -368,10 +442,10 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
-  const addItem = () => setItems((prev) => [...prev, { id: crypto.randomUUID(), title: '', description: '' }])
-  const removeItem = (id: string) => setItems((prev) => prev.filter((it) => it.id !== id))
+  const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
+  const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
   const updateItem = (id: string, field: 'title' | 'description', value: string) =>
-    setItems((prev) => prev.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
+    setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
     startTransition(async () => {
@@ -382,7 +456,7 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   }
 
   return (
-    <SectionCard title={`Our Cosmetic Line (${items.length} product${items.length !== 1 ? 's' : ''}${items.length > 3 ? ' · carousel active' : ''})`}>
+    <SectionCard title={`Our Cosmetic Line${items.length > 3 ? '  (carousel active)' : ''}`}>
       <Field label="Headline">
         <input value={headline} onChange={(e) => setHeadline(e.target.value)} style={S.input} />
       </Field>
@@ -390,7 +464,7 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
         <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} style={S.textarea} rows={2} />
       </Field>
       <div style={S.field}>
-        <label style={S.label}>Products</label>
+        <label style={S.label}>Products ({items.length})</label>
         <ItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} addLabel="Add Product" />
       </div>
       <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
@@ -398,16 +472,60 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   )
 }
 
-/* ── Root export ────────────────────────────────────────── */
+/* ── Root ─────────────────────────────────────────────────── */
 export default function AdminForms({ config }: { config: SiteConfig }) {
+  const [active, setActive] = useState<SectionId>('site')
+
   return (
-    <div>
-      <SiteTitleSection initial={config.siteTitle} />
-      <HeroSection initial={config.hero} />
-      <PharmacistSection initial={config.pharmacist} />
-      <ServicesSection initial={config.services} />
-      <TrustSection initial={config.trust} />
-      <CosmeticSection initial={config.cosmeticLine} />
+    <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+      {/* Sidebar */}
+      <aside style={{
+        width: 210,
+        borderRight: '1px solid var(--border)',
+        padding: '20px 10px',
+        position: 'sticky',
+        top: 64,
+        height: 'calc(100vh - 64px)',
+        overflowY: 'auto',
+        flexShrink: 0,
+        background: 'var(--white)',
+      }}>
+        <p style={{
+          fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)',
+          letterSpacing: '0.1em', textTransform: 'uppercase',
+          padding: '0 10px', marginBottom: 10,
+        }}>
+          Sections
+        </p>
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => setActive(s.id)}
+            style={{
+              display: 'block', width: '100%', textAlign: 'left',
+              padding: '9px 12px', borderRadius: 'var(--radius-sm)',
+              border: 'none', fontFamily: 'var(--font)',
+              fontSize: '0.875rem',
+              fontWeight: active === s.id ? 600 : 400,
+              background: active === s.id ? 'var(--green-800)' : 'transparent',
+              color: active === s.id ? 'var(--white)' : 'var(--text)',
+              cursor: 'pointer', marginBottom: 2,
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </aside>
+
+      {/* Content pane */}
+      <div style={{ flex: 1, padding: '28px 32px 64px', minWidth: 0 }}>
+        {active === 'site'       && <SiteTitleSection  initial={config.siteTitle}    />}
+        {active === 'hero'       && <HeroSection        initial={config.hero}         />}
+        {active === 'pharmacist' && <PharmacistSection  initial={config.pharmacist}   />}
+        {active === 'services'   && <ServicesSection    initial={config.services}     />}
+        {active === 'trust'      && <TrustSection       initial={config.trust}        />}
+        {active === 'cosmetic'   && <CosmeticSection    initial={config.cosmeticLine} />}
+      </div>
     </div>
   )
 }

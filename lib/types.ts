@@ -16,6 +16,7 @@ export type SiteConfig = {
     description: string
     credentials: string[]
     profileDescription: string
+    avatarUrl: string
   }
   services: {
     headline: string
