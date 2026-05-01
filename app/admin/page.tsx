@@ -1,13 +1,15 @@
 import { auth, signOut } from "@/auth"
 import { redirect } from "next/navigation"
 import { getConfig } from "@/lib/config"
+import { getAdmins } from "@/lib/admins"
 import AdminForms from "./AdminForms"
 
 export default async function AdminPage() {
   const session = await auth()
   if (!session) redirect("/admin/login")
 
-  const config = await getConfig()
+  const [config, { emails: admins }] = await Promise.all([getConfig(), getAdmins()])
+  const userEmail = session.user?.email ?? ""
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -53,7 +55,7 @@ export default async function AdminPage() {
         </form>
       </header>
 
-      <AdminForms config={config} />
+      <AdminForms config={config} userEmail={userEmail} admins={admins} />
     </div>
   )
 }

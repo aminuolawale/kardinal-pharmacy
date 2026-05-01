@@ -9,11 +9,14 @@ import {
   saveTrust,
   saveCosmeticLine,
   uploadAvatar,
+  addAdmin,
+  removeAdmin,
 } from './actions'
+import { SUPER_ADMIN } from '@/lib/constants'
 
 /* ── Section nav ──────────────────────────────────────────── */
-type SectionId = 'site' | 'hero' | 'pharmacist' | 'services' | 'trust' | 'cosmetic'
-const SECTIONS: { id: SectionId; label: string }[] = [
+type SectionId = 'site' | 'hero' | 'pharmacist' | 'services' | 'trust' | 'cosmetic' | 'users'
+const BASE_SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'site',        label: 'Site' },
   { id: 'hero',        label: 'Hero' },
   { id: 'pharmacist',  label: 'Pharmacist' },
@@ -472,8 +475,140 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   )
 }
 
+/* ── Users section (super admin only) ────────────────────── */
+function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
+  const [admins, setAdmins] = useState(initialAdmins)
+  const [newEmail, setNewEmail] = useState('')
+  const [addPending, startAdd] = useTransition()
+  const [removePending, startRemove] = useTransition()
+  const [addedMsg, setAddedMsg] = useState(false)
+
+  const handleAdd = () => {
+    if (!newEmail.trim()) return
+    startAdd(async () => {
+      await addAdmin(newEmail)
+      setAdmins((prev) => prev.includes(newEmail.trim().toLowerCase())
+        ? prev
+        : [...prev, newEmail.trim().toLowerCase()])
+      setNewEmail('')
+      setAddedMsg(true)
+      setTimeout(() => setAddedMsg(false), 2000)
+    })
+  }
+
+  const handleRemove = (email: string) => {
+    startRemove(async () => {
+      await removeAdmin(email)
+      setAdmins((prev) => prev.filter((e) => e !== email))
+    })
+  }
+
+  return (
+    <SectionCard title="User Management">
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20 }}>
+        These Google accounts can sign in and edit the site. The super admin cannot be removed.
+      </p>
+
+      <div style={{ marginBottom: 20 }}>
+        {admins.map((email) => {
+          const isSuper = email === SUPER_ADMIN
+          return (
+            <div
+              key={email}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 14px',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                marginBottom: 8,
+                background: isSuper ? 'var(--green-50)' : 'var(--white)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <div style={{
+                  width: 32, height: 32, borderRadius: '50%',
+                  background: isSuper ? 'var(--green-800)' : 'var(--green-100)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.8rem', fontWeight: 700,
+                  color: isSuper ? 'var(--white)' : 'var(--green-800)',
+                  flexShrink: 0,
+                }}>
+                  {email[0].toUpperCase()}
+                </div>
+                <span style={{ fontSize: '0.875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {email}
+                </span>
+              </div>
+              {isSuper ? (
+                <span style={{
+                  fontSize: '0.72rem', fontWeight: 600,
+                  color: 'var(--green-800)', background: 'var(--green-100)',
+                  padding: '3px 8px', borderRadius: '50px',
+                  flexShrink: 0,
+                }}>
+                  Super Admin
+                </span>
+              ) : (
+                <button
+                  onClick={() => handleRemove(email)}
+                  disabled={removePending}
+                  style={{ ...S.deleteBtn, flexShrink: 0 }}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
+        <label style={S.label}>Add admin by email</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            type="email"
+            value={newEmail}
+            onChange={(e) => setNewEmail(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            placeholder="name@gmail.com"
+            style={{ ...S.input, flex: 1 }}
+          />
+          <button
+            onClick={handleAdd}
+            disabled={addPending || !newEmail.trim()}
+            style={{
+              ...S.saveBtn,
+              borderRadius: 'var(--radius-sm)',
+              opacity: addPending || !newEmail.trim() ? 0.5 : 1,
+              flexShrink: 0,
+            }}
+          >
+            {addPending ? 'Adding…' : addedMsg ? 'Added ✓' : 'Add'}
+          </button>
+        </div>
+        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+          The user must sign in with this exact Google account email.
+        </p>
+      </div>
+    </SectionCard>
+  )
+}
+
 /* ── Root ─────────────────────────────────────────────────── */
-export default function AdminForms({ config }: { config: SiteConfig }) {
+export default function AdminForms({
+  config,
+  userEmail,
+  admins,
+}: {
+  config: SiteConfig
+  userEmail: string
+  admins: string[]
+}) {
+  const isSuperAdmin = userEmail === SUPER_ADMIN
+  const sections = isSuperAdmin
+    ? [...BASE_SECTIONS, { id: 'users' as SectionId, label: 'Users' }]
+    : BASE_SECTIONS
+
   const [active, setActive] = useState<SectionId>('site')
 
   return (
@@ -497,7 +632,7 @@ export default function AdminForms({ config }: { config: SiteConfig }) {
         }}>
           Sections
         </p>
-        {SECTIONS.map((s) => (
+        {sections.map((s) => (
           <button
             key={s.id}
             onClick={() => setActive(s.id)}
@@ -515,6 +650,34 @@ export default function AdminForms({ config }: { config: SiteConfig }) {
             {s.label}
           </button>
         ))}
+
+        {isSuperAdmin && (
+          <>
+            <div style={{ height: 1, background: 'var(--border)', margin: '12px 10px' }} />
+            <p style={{
+              fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)',
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              padding: '0 10px', marginBottom: 10,
+            }}>
+              Admin
+            </p>
+            <button
+              onClick={() => setActive('users')}
+              style={{
+                display: 'block', width: '100%', textAlign: 'left',
+                padding: '9px 12px', borderRadius: 'var(--radius-sm)',
+                border: 'none', fontFamily: 'var(--font)',
+                fontSize: '0.875rem',
+                fontWeight: active === 'users' ? 600 : 400,
+                background: active === 'users' ? 'var(--green-800)' : 'transparent',
+                color: active === 'users' ? 'var(--white)' : 'var(--text)',
+                cursor: 'pointer', marginBottom: 2,
+              }}
+            >
+              Users
+            </button>
+          </>
+        )}
       </aside>
 
       {/* Content pane */}
@@ -525,6 +688,7 @@ export default function AdminForms({ config }: { config: SiteConfig }) {
         {active === 'services'   && <ServicesSection    initial={config.services}     />}
         {active === 'trust'      && <TrustSection       initial={config.trust}        />}
         {active === 'cosmetic'   && <CosmeticSection    initial={config.cosmeticLine} />}
+        {active === 'users' && isSuperAdmin && <UsersSection initialAdmins={admins} />}
       </div>
     </div>
   )

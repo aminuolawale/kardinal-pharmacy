@@ -1,20 +1,17 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
-
-const ALLOWED_EMAIL = "aminuolawalekan@gmail.com"
+import { authConfig } from "./auth.config"
+import { readAdmins, SUPER_ADMIN } from "@/lib/admins"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   providers: [Google],
   callbacks: {
-    signIn({ user }) {
-      return user.email === ALLOWED_EMAIL
+    async signIn({ user }) {
+      if (!user.email) return false
+      if (user.email === SUPER_ADMIN) return true
+      const { emails } = await readAdmins()
+      return emails.includes(user.email)
     },
-    session({ session, token }) {
-      return session
-    },
-  },
-  pages: {
-    signIn: "/admin/login",
-    error: "/admin/login",
   },
 })

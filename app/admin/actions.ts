@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
+import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
 import type { SiteConfig } from '@/lib/types'
 
 async function requireAuth() {
@@ -12,6 +13,12 @@ async function requireAuth() {
   if (!session) redirect('/admin/login')
 }
 
+async function requireSuperAdmin() {
+  const session = await auth()
+  if (session?.user?.email !== SUPER_ADMIN) redirect('/admin/login')
+}
+
+/* ── Site content ─────────────────────────────────────────── */
 export async function saveSiteTitle(siteTitle: string) {
   await requireAuth()
   const config = await getConfig()
@@ -73,4 +80,21 @@ export async function uploadAvatar(formData: FormData) {
     pharmacist: { ...config.pharmacist, avatarUrl: `/uploads/${filename}` },
   })
   revalidatePath('/', 'layout')
+}
+
+/* ── User management (super admin only) ──────────────────── */
+export async function addAdmin(email: string) {
+  await requireSuperAdmin()
+  const trimmed = email.trim().toLowerCase()
+  if (!trimmed || !trimmed.includes('@')) return
+  const { emails } = await getAdmins()
+  if (emails.includes(trimmed)) return
+  await saveAdmins({ emails: [...emails, trimmed] })
+}
+
+export async function removeAdmin(email: string) {
+  await requireSuperAdmin()
+  if (email === SUPER_ADMIN) return
+  const { emails } = await getAdmins()
+  await saveAdmins({ emails: emails.filter((e) => e !== email) })
 }
