@@ -1,1 +1,1 @@
-export const SUPER_ADMIN = 'aminuolawalekan@gmail.com'
+export const SUPER_ADMIN = 'aminumohammed@kardinalpharmacy.com'

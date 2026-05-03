@@ -16,10 +16,6 @@ export default auth((req) => {
   if (isRootAdmin) {
     return NextResponse.redirect(new URL("/admin/login", req.url))
   }
-
-  if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/admin/panel", req.url))
-  }
 })
 
 export const config = {
