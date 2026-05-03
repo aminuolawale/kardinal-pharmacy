@@ -7,9 +7,10 @@ const { auth } = NextAuth(authConfig)
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const isLoginPage = req.nextUrl.pathname === "/admin/login"
+  const isLoginStartPage = req.nextUrl.pathname === "/admin/login/google"
   const isRootAdmin = req.nextUrl.pathname === "/admin"
 
-  if (!isLoggedIn && !isLoginPage) {
+  if (!isLoggedIn && !isLoginPage && !isLoginStartPage) {
     return NextResponse.redirect(new URL("/admin/login", req.url))
   }
 

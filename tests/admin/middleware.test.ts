@@ -38,6 +38,12 @@ describe('admin middleware routing', () => {
     expect(middleware(request('/admin/login', { user: { email: 'admin@example.com' } }))).toBeUndefined()
   })
 
+  it('allows the Google login start route for unauthenticated users', async () => {
+    const middleware = (await import('@/middleware')).default
+
+    expect(middleware(request('/admin/login/google'))).toBeUndefined()
+  })
+
   it('redirects unauthenticated admin pages to login', async () => {
     const middleware = (await import('@/middleware')).default
 
@@ -61,4 +67,3 @@ describe('admin middleware routing', () => {
     expect(middleware(request('/admin/panel', { user: { email: 'admin@example.com' } }))).toBeUndefined()
   })
 })
-

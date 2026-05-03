@@ -2,7 +2,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { revalidatePath } from 'next/cache'
-import { auth, signIn, signOut } from '@/auth'
+import { auth, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
@@ -30,10 +30,6 @@ async function requireSuperAdmin() {
 
 export async function logout() {
   await signOut({ redirectTo: '/admin/login' })
-}
-
-export async function loginWithGoogle() {
-  await signIn('google', { redirectTo: '/admin/panel' })
 }
 
 /* ── Site content ─────────────────────────────────────────── */

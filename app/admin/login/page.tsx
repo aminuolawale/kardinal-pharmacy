@@ -1,5 +1,3 @@
-import { loginWithGoogle } from "../actions"
-
 export default function LoginPage({
   searchParams,
 }: {
@@ -43,33 +41,30 @@ export default function LoginPage({
           Sign in to access the pharmacy admin panel.
         </p>
 
-        <form
-          action={loginWithGoogle}
+        <a
+          href="/admin/login/google"
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 12,
+            padding: "13px 24px",
+            background: "var(--white)",
+            border: "1.5px solid var(--border)",
+            borderRadius: "50px",
+            fontFamily: "var(--font)",
+            fontSize: "0.95rem",
+            fontWeight: 500,
+            color: "var(--text)",
+            cursor: "pointer",
+            transition: "var(--transition)",
+            textDecoration: "none",
+          }}
         >
-          <button
-            type="submit"
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 12,
-              padding: "13px 24px",
-              background: "var(--white)",
-              border: "1.5px solid var(--border)",
-              borderRadius: "50px",
-              fontFamily: "var(--font)",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-              color: "var(--text)",
-              cursor: "pointer",
-              transition: "var(--transition)",
-            }}
-          >
-            <GoogleIcon />
-            Continue with Google
-          </button>
-        </form>
+          <GoogleIcon />
+          Continue with Google
+        </a>
       </div>
     </div>
   )

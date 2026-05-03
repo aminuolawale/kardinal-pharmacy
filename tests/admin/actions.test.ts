@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const authMock = vi.fn()
-const signInMock = vi.fn()
 const signOutMock = vi.fn()
 const redirectMock = vi.fn((path: string) => {
   throw new Error(`REDIRECT:${path}`)
@@ -15,7 +14,6 @@ const revalidatePathMock = vi.fn()
 
 vi.mock('@/auth', () => ({
   auth: authMock,
-  signIn: signInMock,
   signOut: signOutMock,
 }))
 
@@ -44,7 +42,6 @@ vi.mock('@/lib/mail', () => ({
 
 beforeEach(() => {
   authMock.mockReset()
-  signInMock.mockReset()
   signOutMock.mockReset()
   redirectMock.mockClear()
   getAdminsMock.mockReset()
@@ -56,14 +53,6 @@ beforeEach(() => {
 })
 
 describe('admin auth actions', () => {
-  it('starts the Google sign-in flow with the admin panel callback', async () => {
-    const { loginWithGoogle } = await import('@/app/admin/actions')
-
-    await loginWithGoogle()
-
-    expect(signInMock).toHaveBeenCalledWith('google', { redirectTo: '/admin/panel' })
-  })
-
   it('logs out to the admin login page', async () => {
     const { logout } = await import('@/app/admin/actions')
 
@@ -189,4 +178,3 @@ describe('protected site-content actions', () => {
     expect(saveConfigMock).not.toHaveBeenCalled()
   })
 })
-
