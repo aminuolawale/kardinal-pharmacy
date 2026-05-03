@@ -151,10 +151,11 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function SaveRow({ isPending, saved, onSave }: { isPending: boolean; saved: boolean; onSave: () => void }) {
+function SaveRow({ isPending, saved, error, onSave }: { isPending: boolean; saved: boolean; error?: string | null; onSave: () => void }) {
   return (
     <div style={S.saveRow}>
       {saved && <span style={{ color: 'var(--green-700)', fontSize: '0.82rem', fontWeight: 500 }}>Saved ✓</span>}
+      {error && <span style={{ color: '#ef4444', fontSize: '0.82rem', fontWeight: 500 }}>{error}</span>}
       <button onClick={onSave} disabled={isPending} style={{ ...S.saveBtn, opacity: isPending ? 0.6 : 1 }}>
         {isPending ? 'Saving…' : 'Save'}
       </button>
@@ -219,19 +220,26 @@ function AvatarUpload({ current, initials }: { current: string; initials: string
   const [preview, setPreview] = useState<string | null>(current || null)
   const [isPending, startTransition] = useTransition()
   const [done, setDone] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setError(null)
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result as string)
     reader.readAsDataURL(file)
     const fd = new FormData()
     fd.append('avatar', file)
     startTransition(async () => {
-      await uploadAvatar(fd)
-      setDone(true)
-      setTimeout(() => setDone(false), 2000)
+      try {
+        await uploadAvatar(fd)
+        setDone(true)
+        setTimeout(() => setDone(false), 2000)
+      } catch (err) {
+        setPreview(current || null)
+        setError(err instanceof Error ? err.message : 'Upload failed — please try again')
+      }
     })
   }
 
@@ -252,17 +260,20 @@ function AvatarUpload({ current, initials }: { current: string; initials: string
       <div>
         <label style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
-          background: 'var(--green-50)', border: '1.5px solid var(--border)',
+          background: 'var(--green-50)', border: `1.5px solid ${error ? '#fca5a5' : 'var(--border)'}`,
           borderRadius: 'var(--radius-sm)', padding: '8px 14px',
           fontSize: '0.85rem', cursor: isPending ? 'not-allowed' : 'pointer',
-          fontFamily: 'var(--font)', color: 'var(--green-800)', fontWeight: 500,
+          fontFamily: 'var(--font)', color: error ? '#ef4444' : 'var(--green-800)', fontWeight: 500,
         }}>
           {isPending ? 'Uploading…' : done ? 'Uploaded ✓' : '↑  Upload Photo'}
           <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} disabled={isPending} />
         </label>
-        <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
-          JPG, PNG or WebP · replaces the initials on the live site
-        </p>
+        {error
+          ? <p style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 6 }}>{error}</p>
+          : <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+              JPG, PNG or WebP · replaces the initials on the live site
+            </p>
+        }
       </div>
     </div>
   )
@@ -271,45 +282,55 @@ function AvatarUpload({ current, initials }: { current: string; initials: string
 function ProductImageUpload({ current, onUploaded }: { current: string; onUploaded: (url: string) => void }) {
   const [preview, setPreview] = useState<string | null>(current || null)
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setError(null)
     const reader = new FileReader()
     reader.onload = () => setPreview(reader.result as string)
     reader.readAsDataURL(file)
     const fd = new FormData()
     fd.append('image', file)
     startTransition(async () => {
-      const url = await uploadProductImage(fd)
-      if (url) { setPreview(url); onUploaded(url) }
+      try {
+        const url = await uploadProductImage(fd)
+        if (url) { setPreview(url); onUploaded(url) }
+      } catch (err) {
+        setPreview(current || null)
+        setError(err instanceof Error ? err.message : 'Upload failed')
+      }
     })
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
-      <div style={{
-        width: 72, height: 72, borderRadius: 8,
-        background: 'var(--green-50)', border: '1.5px solid var(--border)',
-        overflow: 'hidden', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: 'var(--text-muted)', fontSize: '0.75rem',
-      }}>
-        {preview
-          ? <img src={preview} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          : <span>No image</span>
-        }
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{
+          width: 72, height: 72, borderRadius: 8,
+          background: 'var(--green-50)', border: `1.5px solid ${error ? '#fca5a5' : 'var(--border)'}`,
+          overflow: 'hidden', flexShrink: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--text-muted)', fontSize: '0.75rem',
+        }}>
+          {preview
+            ? <img src={preview} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            : <span>No image</span>
+          }
+        </div>
+        <label style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: 'var(--green-50)', border: `1.5px solid ${error ? '#fca5a5' : 'var(--border)'}`,
+          borderRadius: 'var(--radius-sm)', padding: '7px 12px',
+          fontSize: '0.82rem', cursor: isPending ? 'not-allowed' : 'pointer',
+          fontFamily: 'var(--font)', color: error ? '#ef4444' : 'var(--green-800)', fontWeight: 500,
+        }}>
+          {isPending ? 'Uploading…' : '↑ Upload Image'}
+          <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} disabled={isPending} />
+        </label>
       </div>
-      <label style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6,
-        background: 'var(--green-50)', border: '1.5px solid var(--border)',
-        borderRadius: 'var(--radius-sm)', padding: '7px 12px',
-        fontSize: '0.82rem', cursor: isPending ? 'not-allowed' : 'pointer',
-        fontFamily: 'var(--font)', color: 'var(--green-800)', fontWeight: 500,
-      }}>
-        {isPending ? 'Uploading…' : '↑ Upload Image'}
-        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} disabled={isPending} />
-      </label>
+      {error && <p style={{ fontSize: '0.72rem', color: '#ef4444', marginTop: 5 }}>{error}</p>}
     </div>
   )
 }
@@ -338,13 +359,16 @@ function ProductItemsList({ items, onAdd, onRemove, onUpdate }: {
             onChange={(e) => onUpdate(item.id, 'title', e.target.value)}
             style={{ ...S.input, marginBottom: 10 }}
           />
-          <label style={S.label}>Price (e.g. ₦3,500)</label>
-          <input
-            value={item.price}
-            onChange={(e) => onUpdate(item.id, 'price', e.target.value)}
-            style={{ ...S.input, marginBottom: 10 }}
-            placeholder="Leave blank to hide"
-          />
+          <label style={S.label}>Price</label>
+          <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: 10 }}>
+            <span style={{ padding: '9px 10px', background: 'var(--green-50)', color: 'var(--green-800)', fontWeight: 700, borderRight: '1px solid var(--border)', fontSize: '0.9rem', flexShrink: 0 }}>₦</span>
+            <input
+              value={item.price}
+              onChange={(e) => onUpdate(item.id, 'price', e.target.value)}
+              style={{ ...S.input, border: 'none', borderRadius: 0, flex: 1 }}
+              placeholder="Leave blank to hide"
+            />
+          </div>
           <label style={S.label}>Description</label>
           <textarea
             value={item.description}
@@ -364,12 +388,16 @@ function SiteTitleSection({ initial }: { initial: string }) {
   const [value, setValue] = useState(initial)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await saveSiteTitle(value)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await saveSiteTitle(value)
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -378,7 +406,7 @@ function SiteTitleSection({ initial }: { initial: string }) {
       <Field label="Site Title">
         <input value={value} onChange={(e) => setValue(e.target.value)} style={S.input} />
       </Field>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }
@@ -389,12 +417,16 @@ function HeroSection({ initial }: { initial: SiteConfig['hero'] }) {
   const [subtitle, setSubtitle] = useState(initial.subtitle)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await saveHero({ headlinePrimary: primary, headlineEmphasis: emphasis, subtitle })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await saveHero({ headlinePrimary: primary, headlineEmphasis: emphasis, subtitle })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -409,7 +441,7 @@ function HeroSection({ initial }: { initial: SiteConfig['hero'] }) {
       <Field label="Subtitle">
         <textarea value={subtitle} onChange={(e) => setSubtitle(e.target.value)} style={S.textarea} rows={3} />
       </Field>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }
@@ -421,6 +453,7 @@ function PharmacistSection({ initial }: { initial: SiteConfig['pharmacist'] }) {
   const [profileDescription, setProfileDescription] = useState(initial.profileDescription)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const initials = name
     .split(' ')
@@ -430,10 +463,13 @@ function PharmacistSection({ initial }: { initial: SiteConfig['pharmacist'] }) {
     .slice(0, 2)
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await savePharmacist({ name, description, credentials, profileDescription, avatarUrl: initial.avatarUrl })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await savePharmacist({ name, description, credentials, profileDescription, avatarUrl: initial.avatarUrl })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -459,7 +495,7 @@ function PharmacistSection({ initial }: { initial: SiteConfig['pharmacist'] }) {
           rows={8}
         />
       </Field>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }
@@ -470,6 +506,7 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
   const [items, setItems] = useState<ListItem[]>(initial.items)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
   const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
@@ -477,10 +514,13 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
     setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await saveServices({ headline, subtitle, items })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await saveServices({ headline, subtitle, items })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -496,7 +536,7 @@ function ServicesSection({ initial }: { initial: SiteConfig['services'] }) {
         <label style={S.label}>Services ({items.length})</label>
         <ItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} addLabel="Add Service" />
       </div>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }
@@ -505,6 +545,7 @@ function TrustSection({ initial }: { initial: SiteConfig['trust'] }) {
   const [items, setItems] = useState<ListItem[]>(initial.items)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
   const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
@@ -512,10 +553,13 @@ function TrustSection({ initial }: { initial: SiteConfig['trust'] }) {
     setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await saveTrust({ items })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await saveTrust({ items })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -525,7 +569,7 @@ function TrustSection({ initial }: { initial: SiteConfig['trust'] }) {
         <label style={S.label}>Reasons</label>
         <ItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} addLabel="Add Reason" />
       </div>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }
@@ -536,6 +580,7 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   const [items, setItems] = useState<ProductItem[]>(initial.items)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '', price: '', imageUrl: '' }])
   const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
@@ -543,10 +588,13 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
     setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
+    setError(null)
     startTransition(async () => {
-      await saveCosmeticLine({ headline, subtitle, items })
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      try {
+        await saveCosmeticLine({ headline, subtitle, items })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2000)
+      } catch { setError('Save failed — please try again') }
     })
   }
 
@@ -562,7 +610,7 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
         <label style={S.label}>Products ({items.length})</label>
         <ProductItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} />
       </div>
-      <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
+      <SaveRow isPending={isPending} saved={saved} error={error} onSave={handleSave} />
     </SectionCard>
   )
 }

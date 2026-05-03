@@ -8,9 +8,13 @@
   "pharmacist": {
     "name": "Pharm. Aminu Abdulsalam",
     "description": "Registered Pharmacist & Cosmetic Formulator",
-    "credentials": ["PCN Licensed", "NAFDAC Reg.", "10+ Yrs Exp."],
+    "credentials": [
+      "PCN Licensed",
+      "NAFDAC Reg.",
+      "10+ Yrs Exp."
+    ],
     "profileDescription": "Pharm. Aminu Abdulsalam is a registered pharmacist with extensive expertise in pharmaceutical care, patient counseling, and cosmetic formulation. As the founder of Kardinal Pharmacy, he has spent over a decade providing affordable, high-quality healthcare to the Ijegun community.\n\nHis practice is grounded in the belief that every patient deserves undivided attention. He takes the time to understand each individual's health history, lifestyle, and needs — then crafts solutions that genuinely make a difference, not just fill a prescription.\n\nBeyond clinical pharmacy, Pharm. Aminu is a passionate cosmetic chemist, developing a growing line of personal care products formulated specifically for Nigerian skin and tropical conditions — combining scientific rigour with the warmth of local knowledge.",
-    "avatarUrl": ""
+    "avatarUrl": "/uploads/pharmacist-avatar.jpg"
   },
   "services": {
     "headline": "Comprehensive Care Under One Roof",
@@ -63,10 +67,10 @@
     "items": [
       {
         "id": "p1",
-        "title": "Skincare Range",
+        "title": "Dark skin toner",
         "description": "Gentle, effective formulations for cleansing, moisturising, and protecting your skin — free from harmful bleaching agents and harsh chemicals.",
-        "price": "",
-        "imageUrl": ""
+        "price": "30000000",
+        "imageUrl": "/uploads/products/product-1777828699164.jpg"
       },
       {
         "id": "p2",

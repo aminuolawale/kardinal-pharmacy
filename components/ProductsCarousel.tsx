@@ -32,7 +32,7 @@ function ProductCard({ item, index }: { item: ProductItem; index: number }) {
       <p>{item.description}</p>
       {item.price && (
         <p style={{ fontWeight: 700, color: 'var(--gold)', fontSize: '1.05rem', margin: '10px 0 4px' }}>
-          {item.price}
+          ₦{item.price}
         </p>
       )}
       <a href="#location" className="text-link text-link--light">Enquire &rarr;</a>
