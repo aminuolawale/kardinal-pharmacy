@@ -81,4 +81,40 @@ describe('admin storage', () => {
     )
     expect(fetchMock.mock.calls[1][0]).toContain('https://kv.example.com/set/kardinal%3Aadmins/')
   })
+
+  it('bootstraps empty Upstash storage from the local admin file', async () => {
+    await fs.writeFile(
+      path.join(tempDir, 'data', 'admins.json'),
+      JSON.stringify({ emails: ['file@example.com'] }),
+    )
+    process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'upstash-token'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: null }) })
+      .mockResolvedValueOnce({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    const { readAdmins } = await import('@/lib/admins')
+
+    await expect(readAdmins()).resolves.toEqual({
+      emails: ['aminumohammed@kardinalpharmacy.com', 'file@example.com'],
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock.mock.calls[1][0]).toContain('https://upstash.example.com/set/kardinal%3Aadmins/')
+  })
+
+  it('falls back to the local admin file if Upstash is unreachable', async () => {
+    await fs.writeFile(
+      path.join(tempDir, 'data', 'admins.json'),
+      JSON.stringify({ emails: ['file@example.com'] }),
+    )
+    process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'bad-token'
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 401 }))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { readAdmins } = await import('@/lib/admins')
+
+    await expect(readAdmins()).resolves.toEqual({
+      emails: ['aminumohammed@kardinalpharmacy.com', 'file@example.com'],
+    })
+  })
 })

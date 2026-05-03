@@ -8,6 +8,7 @@ const ADMINS_PATH = path.join(process.cwd(), 'data', 'admins.json')
 const ADMINS_KEY = 'kardinal:admins'
 
 type AdminsData = { emails: string[] }
+type AdminsInput = AdminsData | string[] | null | undefined
 
 function getKvConfig() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
@@ -16,14 +17,27 @@ function getKvConfig() {
   return { url: url.replace(/\/$/, ''), token }
 }
 
-function normalizeAdmins(data: AdminsData): AdminsData {
+function normalizeAdmins(data: AdminsInput): AdminsData {
+  const source = Array.isArray(data) ? data : data?.emails ?? []
   const emails = Array.from(
     new Set([
       SUPER_ADMIN.toLowerCase(),
-      ...data.emails.map((email) => email.trim().toLowerCase()).filter(Boolean),
+      ...source
+        .filter((email): email is string => typeof email === 'string')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
     ]),
   )
   return { emails }
+}
+
+async function readAdminsFromFile(): Promise<AdminsData> {
+  try {
+    const raw = await fs.readFile(ADMINS_PATH, 'utf-8')
+    return normalizeAdmins(JSON.parse(raw) as AdminsInput)
+  } catch {
+    return { emails: [SUPER_ADMIN] }
+  }
 }
 
 async function readAdminsFromKv(): Promise<AdminsData | null> {
@@ -38,8 +52,14 @@ async function readAdminsFromKv(): Promise<AdminsData | null> {
   if (!response.ok) throw new Error(`Failed to read admins from KV: ${response.status}`)
 
   const { result } = await response.json()
-  if (!result) return { emails: [SUPER_ADMIN] }
-  return normalizeAdmins(typeof result === 'string' ? JSON.parse(result) : result)
+  if (!result) {
+    const fileAdmins = await readAdminsFromFile()
+    await saveAdminsToKv(fileAdmins)
+    return fileAdmins
+  }
+
+  const parsed = typeof result === 'string' ? JSON.parse(result) : result
+  return normalizeAdmins(parsed as AdminsInput)
 }
 
 async function saveAdminsToKv(data: AdminsData): Promise<boolean> {
@@ -58,15 +78,14 @@ async function saveAdminsToKv(data: AdminsData): Promise<boolean> {
 
 /** Plain read — safe to call outside a React render (e.g. in auth callbacks). */
 export async function readAdmins(): Promise<AdminsData> {
-  const kvAdmins = await readAdminsFromKv()
-  if (kvAdmins) return kvAdmins
-
   try {
-    const raw = await fs.readFile(ADMINS_PATH, 'utf-8')
-    return normalizeAdmins(JSON.parse(raw) as AdminsData)
-  } catch {
-    return { emails: [SUPER_ADMIN] }
+    const kvAdmins = await readAdminsFromKv()
+    if (kvAdmins) return kvAdmins
+  } catch (error) {
+    console.error('Failed to read admins from KV; falling back to local admin file', error)
   }
+
+  return readAdminsFromFile()
 }
 
 /** Cached read for use inside server components / server actions. */
