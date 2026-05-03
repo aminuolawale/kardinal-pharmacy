@@ -2,7 +2,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { revalidatePath } from 'next/cache'
-import { auth } from '@/auth'
+import { auth, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
@@ -17,6 +17,10 @@ async function requireSuperAdmin() {
   const session = await auth()
   const email = session?.user?.email?.toLowerCase()
   if (email !== SUPER_ADMIN.toLowerCase()) redirect('/admin/login')
+}
+
+export async function logout() {
+  await signOut({ redirectTo: '/admin/login' })
 }
 
 /* ── Site content ─────────────────────────────────────────── */

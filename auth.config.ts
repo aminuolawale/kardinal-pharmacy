@@ -18,5 +18,18 @@ export const authConfig = {
       return true
     },
   },
+  session: { strategy: "jwt" },
+  // session-only cookies: they expire when the browser is closed
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   providers: [],
 } satisfies NextAuthConfig

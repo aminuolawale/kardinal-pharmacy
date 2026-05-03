@@ -5,7 +5,11 @@ import { readAdmins, SUPER_ADMIN } from "@/lib/admins"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
-  providers: [Google],
+  providers: [
+    Google({
+      authorization: { params: { prompt: "select_account" } },
+    }),
+  ],
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false

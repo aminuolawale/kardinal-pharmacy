@@ -13,7 +13,8 @@ export default auth((req) => {
   }
 
   if (isLoggedIn && isLoginPage) {
-    return NextResponse.redirect(new URL("/admin", req.url))
+    // Force logout if they hit the login page while logged in to ensure a "fresh" login
+    return NextResponse.redirect(new URL("/api/auth/signout?callbackUrl=/admin/login", req.url))
   }
 })
 

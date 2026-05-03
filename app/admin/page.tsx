@@ -1,8 +1,9 @@
-import { auth, signOut } from "@/auth"
+import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { getConfig } from "@/lib/config"
 import { getAdmins } from "@/lib/admins"
 import AdminForms from "./AdminForms"
+import { logout } from "./actions"
 
 export default async function AdminPage() {
   const session = await auth()
@@ -33,10 +34,7 @@ export default async function AdminPage() {
           </span>
         </div>
 
-        <form action={async () => {
-          "use server"
-          await signOut({ redirectTo: "/admin/login" })
-        }}>
+        <form action={logout}>
           <button
             type="submit"
             style={{
