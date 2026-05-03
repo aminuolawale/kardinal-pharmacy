@@ -1,15 +1,35 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Nav() {
   const [scrolled, setScrolled]   = useState(false)
   const [menuOpen, setMenuOpen]   = useState(false)
+  const [clickCount, setClickCount] = useState(0)
+  const router = useRouter()
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  // Reset click count after 2 seconds of inactivity
+  useEffect(() => {
+    if (clickCount === 0) return
+    const timer = setTimeout(() => setClickCount(0), 2000)
+    return () => clearTimeout(timer)
+  }, [clickCount])
+
+  const handleSpacerClick = () => {
+    const nextCount = clickCount + 1
+    if (nextCount === 4) {
+      router.push('/admin')
+      setClickCount(0)
+    } else {
+      setClickCount(nextCount)
+    }
+  }
 
   const openMenu = () => {
     setMenuOpen(true)
@@ -34,6 +54,8 @@ export default function Nav() {
             </svg>
             <span>Kardinal <strong>Pharmacy</strong></span>
           </a>
+
+          <div className="nav__spacer" onClick={handleSpacerClick} />
 
           <ul className="nav__links" role="list">
             <li><a href="#services">Services</a></li>
