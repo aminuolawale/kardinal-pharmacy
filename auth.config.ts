@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth"
+import { authSecret } from "./lib/auth-env"
 
 // Edge-compatible config — no Node.js modules.
 // Used by middleware to check session existence only.
@@ -19,6 +20,8 @@ export const authConfig = {
     },
   },
   session: { strategy: "jwt" },
+  secret: authSecret,
+  trustHost: true,
   // session-only cookies: they expire when the browser is closed
   cookies: {
     sessionToken: {

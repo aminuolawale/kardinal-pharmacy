@@ -1,12 +1,15 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import { authConfig } from "./auth.config"
+import { googleClientId, googleClientSecret } from "./lib/auth-env"
 import { readAdmins, SUPER_ADMIN } from "@/lib/admins"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   ...authConfig,
   providers: [
     Google({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
       authorization: { params: { prompt: "select_account" } },
     }),
   ],
