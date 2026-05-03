@@ -70,6 +70,7 @@ export async function sendNewAdminEmail(to: string) {
       '',
       `Site: ${siteUrl}`,
       `Admin page: ${adminUrl}`,
+      'You can also access the admin page by clicking on the space between the site title and nav buttons 4 times',
       '',
       'To access the admin page:',
       '1. Open the admin page link.',
