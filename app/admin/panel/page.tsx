@@ -1,16 +1,21 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { getConfig } from "@/lib/config"
-import { getAdmins } from "@/lib/admins"
+import { getAdmins, SUPER_ADMIN } from "@/lib/admins"
 import AdminForms from "../AdminForms"
 import { logout } from "../actions"
 
 export default async function AdminPage() {
   const session = await auth()
-  if (!session) redirect("/admin/login")
+  const userEmail = session?.user?.email?.toLowerCase() ?? ""
+  if (!userEmail) redirect("/admin/login")
 
   const [config, { emails: admins }] = await Promise.all([getConfig(), getAdmins()])
-  const userEmail = session.user?.email ?? ""
+  const isAllowedAdmin =
+    userEmail === SUPER_ADMIN.toLowerCase() ||
+    admins.some((email) => email.toLowerCase() === userEmail)
+
+  if (!isAllowedAdmin) redirect("/admin/login")
 
   return (
     <div style={{ minHeight: "100vh" }}>

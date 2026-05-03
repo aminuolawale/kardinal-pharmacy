@@ -1,4 +1,4 @@
-import { signIn } from "@/auth"
+import { loginWithGoogle } from "../actions"
 
 export default function LoginPage({
   searchParams,
@@ -44,10 +44,7 @@ export default function LoginPage({
         </p>
 
         <form
-          action={async () => {
-            "use server"
-            await signIn("google", { redirectTo: "/admin/panel" })
-          }}
+          action={loginWithGoogle}
         >
           <button
             type="submit"

@@ -5,7 +5,13 @@ function firstEnv(...names: string[]): string | undefined {
   }
 }
 
-export const authSecret = firstEnv("AUTH_SECRET", "NEXTAUTH_SECRET")
+export const authSecret = firstEnv(
+  "AUTH_SECRET",
+  "NEXTAUTH_SECRET",
+  "AUTH_GOOGLE_SECRET",
+  "GOOGLE_CLIENT_SECRET",
+  "GOOGLE_SECRET",
+)
 
 export const googleClientId = firstEnv(
   "AUTH_GOOGLE_ID",
@@ -18,4 +24,3 @@ export const googleClientSecret = firstEnv(
   "GOOGLE_CLIENT_SECRET",
   "GOOGLE_SECRET",
 )
-

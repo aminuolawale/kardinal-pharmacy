@@ -2,7 +2,7 @@
 import fs from 'fs/promises'
 import path from 'path'
 import { revalidatePath } from 'next/cache'
-import { auth, signOut } from '@/auth'
+import { auth, signIn, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
@@ -11,7 +11,15 @@ import type { SiteConfig } from '@/lib/types'
 
 async function requireAuth() {
   const session = await auth()
-  if (!session) redirect('/admin/login')
+  const email = session?.user?.email?.toLowerCase()
+  if (!email) redirect('/admin/login')
+
+  if (email === SUPER_ADMIN.toLowerCase()) return
+
+  const { emails } = await getAdmins()
+  if (!emails.some((adminEmail) => adminEmail.toLowerCase() === email)) {
+    redirect('/admin/login')
+  }
 }
 
 async function requireSuperAdmin() {
@@ -22,6 +30,10 @@ async function requireSuperAdmin() {
 
 export async function logout() {
   await signOut({ redirectTo: '/admin/login' })
+}
+
+export async function loginWithGoogle() {
+  await signIn('google', { redirectTo: '/admin/panel' })
 }
 
 /* ── Site content ─────────────────────────────────────────── */
