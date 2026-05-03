@@ -651,7 +651,7 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
 
       <div style={{ marginBottom: 20 }}>
         {admins.map((email) => {
-          const isSuper = email === SUPER_ADMIN
+          const isSuper = email.toLowerCase() === SUPER_ADMIN.toLowerCase()
           return (
             <div
               key={email}
@@ -744,7 +744,7 @@ export default function AdminForms({
   userEmail: string
   admins: string[]
 }) {
-  const isSuperAdmin = userEmail === SUPER_ADMIN
+  const isSuperAdmin = userEmail.toLowerCase() === SUPER_ADMIN.toLowerCase()
   const sections = isSuperAdmin
     ? [...BASE_SECTIONS, { id: 'users' as SectionId, label: 'Users' }]
     : BASE_SECTIONS

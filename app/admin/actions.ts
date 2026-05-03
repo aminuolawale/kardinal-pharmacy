@@ -15,7 +15,8 @@ async function requireAuth() {
 
 async function requireSuperAdmin() {
   const session = await auth()
-  if (session?.user?.email !== SUPER_ADMIN) redirect('/admin/login')
+  const email = session?.user?.email?.toLowerCase()
+  if (email !== SUPER_ADMIN.toLowerCase()) redirect('/admin/login')
 }
 
 /* ── Site content ─────────────────────────────────────────── */
@@ -94,9 +95,10 @@ export async function addAdmin(email: string) {
 
 export async function removeAdmin(email: string) {
   await requireSuperAdmin()
-  if (email === SUPER_ADMIN) return
+  const target = email.trim().toLowerCase()
+  if (target === SUPER_ADMIN.toLowerCase()) return
   const { emails } = await getAdmins()
-  await saveAdmins({ emails: emails.filter((e) => e !== email) })
+  await saveAdmins({ emails: emails.filter((e) => e.toLowerCase() !== target) })
 }
 
 export async function uploadProductImage(formData: FormData): Promise<string> {
