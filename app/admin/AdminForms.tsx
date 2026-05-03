@@ -621,18 +621,25 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
   const [newEmail, setNewEmail] = useState('')
   const [addPending, startAdd] = useTransition()
   const [removePending, startRemove] = useTransition()
-  const [addedMsg, setAddedMsg] = useState(false)
+  const [addMessage, setAddMessage] = useState('')
 
   const handleAdd = () => {
     if (!newEmail.trim()) return
     startAdd(async () => {
-      await addAdmin(newEmail)
-      setAdmins((prev) => prev.includes(newEmail.trim().toLowerCase())
-        ? prev
-        : [...prev, newEmail.trim().toLowerCase()])
-      setNewEmail('')
-      setAddedMsg(true)
-      setTimeout(() => setAddedMsg(false), 2000)
+      const trimmed = newEmail.trim().toLowerCase()
+      const result = await addAdmin(trimmed)
+
+      if (result.added) {
+        setAdmins((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed])
+        setNewEmail('')
+      }
+
+      setAddMessage(
+        result.emailSent
+          ? 'Admin added and email sent.'
+          : result.error ?? 'Admin was not added.',
+      )
+      setTimeout(() => setAddMessage(''), 4000)
     })
   }
 
@@ -723,11 +730,11 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
               flexShrink: 0,
             }}
           >
-            {addPending ? 'Adding…' : addedMsg ? 'Added ✓' : 'Add'}
+            {addPending ? 'Adding...' : 'Add'}
           </button>
         </div>
         <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
-          The user must sign in with this exact Google account email.
+          {addMessage || 'The user must sign in with this exact Google account email.'}
         </p>
       </div>
     </SectionCard>

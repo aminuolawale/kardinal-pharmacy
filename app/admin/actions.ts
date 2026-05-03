@@ -6,6 +6,7 @@ import { auth, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
+import { sendNewAdminEmail } from '@/lib/mail'
 import type { SiteConfig } from '@/lib/types'
 
 async function requireAuth() {
@@ -91,10 +92,26 @@ export async function uploadAvatar(formData: FormData) {
 export async function addAdmin(email: string) {
   await requireSuperAdmin()
   const trimmed = email.trim().toLowerCase()
-  if (!trimmed || !trimmed.includes('@')) return
+  if (!trimmed || !trimmed.includes('@')) {
+    return { added: false, emailSent: false, error: 'Enter a valid email address.' }
+  }
   const { emails } = await getAdmins()
-  if (emails.includes(trimmed)) return
+  if (emails.some((e) => e.toLowerCase() === trimmed)) {
+    return { added: false, emailSent: false, error: 'This admin already exists.' }
+  }
   await saveAdmins({ emails: [...emails, trimmed] })
+
+  try {
+    await sendNewAdminEmail(trimmed)
+    return { added: true, emailSent: true }
+  } catch (error) {
+    console.error('Failed to send new admin email', error)
+    return {
+      added: true,
+      emailSent: false,
+      error: 'Admin added, but the notification email could not be sent.',
+    }
+  }
 }
 
 export async function removeAdmin(email: string) {
