@@ -24,7 +24,7 @@ export default function Nav() {
   const handleSpacerClick = () => {
     const nextCount = clickCount + 1
     if (nextCount === 4) {
-      router.push('/admin')
+      router.push('/admin/login')
       setClickCount(0)
     } else {
       setClickCount(nextCount)
