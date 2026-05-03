@@ -4,6 +4,14 @@ export type ListItem = {
   description: string
 }
 
+export type ProductItem = {
+  id: string
+  title: string
+  description: string
+  price: string
+  imageUrl: string
+}
+
 export type SiteConfig = {
   siteTitle: string
   hero: {
@@ -29,6 +37,6 @@ export type SiteConfig = {
   cosmeticLine: {
     headline: string
     subtitle: string
-    items: ListItem[]
+    items: ProductItem[]
   }
 }

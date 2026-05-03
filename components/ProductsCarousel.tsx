@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import type { ListItem } from '@/lib/types'
+import type { ProductItem } from '@/lib/types'
 
 const PAGE_SIZE = 3
 const CARD_CLASSES = ['product-card product-card--a', 'product-card product-card--b', 'product-card product-card--c']
@@ -14,7 +14,33 @@ function FlaskIcon() {
   )
 }
 
-export default function ProductsCarousel({ items }: { items: ListItem[] }) {
+function ProductCard({ item, index }: { item: ProductItem; index: number }) {
+  return (
+    <div className={`${CARD_CLASSES[index % 3]} reveal${index === 1 ? ' reveal--delay' : index === 2 ? ' reveal--delay-2' : ''}`}>
+      {item.imageUrl ? (
+        <div style={{ width: '100%', height: 180, overflow: 'hidden', borderRadius: 8, marginBottom: 16 }}>
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        </div>
+      ) : (
+        <div className="product-card__icon"><FlaskIcon /></div>
+      )}
+      <h3>{item.title}</h3>
+      <p>{item.description}</p>
+      {item.price && (
+        <p style={{ fontWeight: 700, color: 'var(--gold)', fontSize: '1.05rem', margin: '10px 0 4px' }}>
+          {item.price}
+        </p>
+      )}
+      <a href="#location" className="text-link text-link--light">Enquire &rarr;</a>
+    </div>
+  )
+}
+
+export default function ProductsCarousel({ items }: { items: ProductItem[] }) {
   const [page, setPage] = useState(0)
   const totalPages = Math.ceil(items.length / PAGE_SIZE)
   const visible = items.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
@@ -35,21 +61,12 @@ export default function ProductsCarousel({ items }: { items: ListItem[] }) {
     <>
       <div className="products-grid">
         {visible.map((item, i) => (
-          <div
-            key={item.id}
-            className={`${CARD_CLASSES[i % 3]} reveal${i === 1 ? ' reveal--delay' : i === 2 ? ' reveal--delay-2' : ''}`}
-          >
-            <div className="product-card__icon"><FlaskIcon /></div>
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
-            <a href="#location" className="text-link text-link--light">Enquire &rarr;</a>
-          </div>
+          <ProductCard key={item.id} item={item} index={i} />
         ))}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 36 }}>
         <button onClick={() => setPage((p) => p - 1)} disabled={page === 0} style={navBtn(page === 0)}>←</button>
-
         {Array.from({ length: totalPages }, (_, i) => (
           <button
             key={i}
@@ -61,7 +78,6 @@ export default function ProductsCarousel({ items }: { items: ListItem[] }) {
             }}
           />
         ))}
-
         <button onClick={() => setPage((p) => p + 1)} disabled={page >= totalPages - 1} style={navBtn(page >= totalPages - 1)}>→</button>
       </div>
     </>

@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import type { SiteConfig, ListItem } from '@/lib/types'
+import type { SiteConfig, ListItem, ProductItem } from '@/lib/types'
 import {
   saveSiteTitle,
   saveHero,
@@ -9,6 +9,7 @@ import {
   saveTrust,
   saveCosmeticLine,
   uploadAvatar,
+  uploadProductImage,
   addAdmin,
   removeAdmin,
 } from './actions'
@@ -267,6 +268,97 @@ function AvatarUpload({ current, initials }: { current: string; initials: string
   )
 }
 
+function ProductImageUpload({ current, onUploaded }: { current: string; onUploaded: (url: string) => void }) {
+  const [preview, setPreview] = useState<string | null>(current || null)
+  const [isPending, startTransition] = useTransition()
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => setPreview(reader.result as string)
+    reader.readAsDataURL(file)
+    const fd = new FormData()
+    fd.append('image', file)
+    startTransition(async () => {
+      const url = await uploadProductImage(fd)
+      if (url) { setPreview(url); onUploaded(url) }
+    })
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 10 }}>
+      <div style={{
+        width: 72, height: 72, borderRadius: 8,
+        background: 'var(--green-50)', border: '1.5px solid var(--border)',
+        overflow: 'hidden', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text-muted)', fontSize: '0.75rem',
+      }}>
+        {preview
+          ? <img src={preview} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          : <span>No image</span>
+        }
+      </div>
+      <label style={{
+        display: 'inline-flex', alignItems: 'center', gap: 6,
+        background: 'var(--green-50)', border: '1.5px solid var(--border)',
+        borderRadius: 'var(--radius-sm)', padding: '7px 12px',
+        fontSize: '0.82rem', cursor: isPending ? 'not-allowed' : 'pointer',
+        fontFamily: 'var(--font)', color: 'var(--green-800)', fontWeight: 500,
+      }}>
+        {isPending ? 'Uploading…' : '↑ Upload Image'}
+        <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleFile} disabled={isPending} />
+      </label>
+    </div>
+  )
+}
+
+function ProductItemsList({ items, onAdd, onRemove, onUpdate }: {
+  items: ProductItem[]
+  onAdd: () => void
+  onRemove: (id: string) => void
+  onUpdate: (id: string, field: keyof Omit<ProductItem, 'id'>, value: string) => void
+}) {
+  return (
+    <>
+      {items.map((item) => (
+        <div key={item.id} style={S.itemCard}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <label style={{ ...S.label, margin: 0 }}>Product Image</label>
+            <button onClick={() => onRemove(item.id)} style={S.deleteBtn}>Remove</button>
+          </div>
+          <ProductImageUpload
+            current={item.imageUrl}
+            onUploaded={(url) => onUpdate(item.id, 'imageUrl', url)}
+          />
+          <label style={S.label}>Title</label>
+          <input
+            value={item.title}
+            onChange={(e) => onUpdate(item.id, 'title', e.target.value)}
+            style={{ ...S.input, marginBottom: 10 }}
+          />
+          <label style={S.label}>Price (e.g. ₦3,500)</label>
+          <input
+            value={item.price}
+            onChange={(e) => onUpdate(item.id, 'price', e.target.value)}
+            style={{ ...S.input, marginBottom: 10 }}
+            placeholder="Leave blank to hide"
+          />
+          <label style={S.label}>Description</label>
+          <textarea
+            value={item.description}
+            onChange={(e) => onUpdate(item.id, 'description', e.target.value)}
+            style={S.textarea}
+            rows={3}
+          />
+        </div>
+      ))}
+      <button onClick={onAdd} style={S.addBtn}>+ Add Product</button>
+    </>
+  )
+}
+
 /* ── Section forms ────────────────────────────────────────── */
 function SiteTitleSection({ initial }: { initial: string }) {
   const [value, setValue] = useState(initial)
@@ -441,13 +533,13 @@ function TrustSection({ initial }: { initial: SiteConfig['trust'] }) {
 function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
   const [headline, setHeadline] = useState(initial.headline)
   const [subtitle, setSubtitle] = useState(initial.subtitle)
-  const [items, setItems] = useState<ListItem[]>(initial.items)
+  const [items, setItems] = useState<ProductItem[]>(initial.items)
   const [isPending, startTransition] = useTransition()
   const [saved, setSaved] = useState(false)
 
-  const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '' }])
+  const addItem = () => setItems((p) => [...p, { id: crypto.randomUUID(), title: '', description: '', price: '', imageUrl: '' }])
   const removeItem = (id: string) => setItems((p) => p.filter((it) => it.id !== id))
-  const updateItem = (id: string, field: 'title' | 'description', value: string) =>
+  const updateItem = (id: string, field: keyof Omit<ProductItem, 'id'>, value: string) =>
     setItems((p) => p.map((it) => (it.id === id ? { ...it, [field]: value } : it)))
 
   const handleSave = () => {
@@ -468,7 +560,7 @@ function CosmeticSection({ initial }: { initial: SiteConfig['cosmeticLine'] }) {
       </Field>
       <div style={S.field}>
         <label style={S.label}>Products ({items.length})</label>
-        <ItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} addLabel="Add Product" />
+        <ProductItemsList items={items} onAdd={addItem} onRemove={removeItem} onUpdate={updateItem} />
       </div>
       <SaveRow isPending={isPending} saved={saved} onSave={handleSave} />
     </SectionCard>

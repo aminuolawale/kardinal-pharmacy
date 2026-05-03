@@ -64,17 +64,23 @@
       {
         "id": "p1",
         "title": "Skincare Range",
-        "description": "Gentle, effective formulations for cleansing, moisturising, and protecting your skin — free from harmful bleaching agents and harsh chemicals."
+        "description": "Gentle, effective formulations for cleansing, moisturising, and protecting your skin — free from harmful bleaching agents and harsh chemicals.",
+        "price": "",
+        "imageUrl": ""
       },
       {
         "id": "p2",
         "title": "Body Care",
-        "description": "Rich body creams, lotions, and oils crafted to deeply nourish and protect your skin through Lagos's heat and humidity."
+        "description": "Rich body creams, lotions, and oils crafted to deeply nourish and protect your skin through Lagos's heat and humidity.",
+        "price": "",
+        "imageUrl": ""
       },
       {
         "id": "p3",
         "title": "Hair & Scalp",
-        "description": "Specialised formulations to promote scalp health, strengthen hair, and address common concerns like dryness, breakage, and dandruff."
+        "description": "Specialised formulations to promote scalp health, strengthen hair, and address common concerns like dryness, breakage, and dandruff.",
+        "price": "",
+        "imageUrl": ""
       }
     ]
   }

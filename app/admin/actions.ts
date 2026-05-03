@@ -98,3 +98,19 @@ export async function removeAdmin(email: string) {
   const { emails } = await getAdmins()
   await saveAdmins({ emails: emails.filter((e) => e !== email) })
 }
+
+export async function uploadProductImage(formData: FormData): Promise<string> {
+  await requireAuth()
+  const file = formData.get('image') as File
+  if (!file || file.size === 0) return ''
+
+  const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
+  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
+  const filename = `product-${Date.now()}.${safeExt}`
+  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
+
+  await fs.mkdir(uploadDir, { recursive: true })
+  await fs.writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()))
+
+  return `/uploads/products/${filename}`
+}
