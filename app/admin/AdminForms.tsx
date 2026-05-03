@@ -10,8 +10,6 @@ import {
   saveCosmeticLine,
   uploadAvatar,
   uploadProductImage,
-  addAdmin,
-  removeAdmin,
 } from './actions'
 import { SUPER_ADMIN } from '@/lib/constants'
 
@@ -627,7 +625,12 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
     if (!newEmail.trim()) return
     startAdd(async () => {
       const trimmed = newEmail.trim().toLowerCase()
-      const result = await addAdmin(trimmed)
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmed }),
+      })
+      const result = await response.json()
 
       if (result.added) {
         setAdmins((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed])
@@ -645,8 +648,14 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
 
   const handleRemove = (email: string) => {
     startRemove(async () => {
-      await removeAdmin(email)
-      setAdmins((prev) => prev.filter((e) => e !== email))
+      const response = await fetch('/api/admin/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      if (response.ok) {
+        setAdmins((prev) => prev.filter((e) => e !== email))
+      }
     })
   }
 
