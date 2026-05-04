@@ -98,3 +98,31 @@ export async function sendNewAdminEmail(to: string) {
   })
 }
 
+export async function sendAdminSignedInEmail(adminEmail: string) {
+  const config = await getConfig()
+  const siteName = config.siteTitle || 'Kardinal Pharmacy'
+  const siteUrl = getSiteUrl()
+  const adminUrl = `${siteUrl}/admin/panel`
+  const safeSiteName = escapeHtml(siteName)
+  const safeAdminEmail = escapeHtml(adminEmail)
+  const safeAdminUrl = escapeHtml(adminUrl)
+
+  await sendEmail({
+    to: 'aminumohammed@kardinalpharmacy.com',
+    subject: `${adminEmail} signed in to ${siteName}`,
+    text: [
+      `${adminEmail} signed in to the ${siteName} admin panel.`,
+      '',
+      `Admin panel: ${adminUrl}`,
+      '',
+      'This notification is sent when an invited admin successfully signs in.',
+    ].join('\n'),
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2933;">
+        <p><strong>${safeAdminEmail}</strong> signed in to the <strong>${safeSiteName}</strong> admin panel.</p>
+        <p>Admin panel: <a href="${safeAdminUrl}">${safeAdminUrl}</a></p>
+        <p>This notification is sent when an invited admin successfully signs in.</p>
+      </div>
+    `,
+  })
+}

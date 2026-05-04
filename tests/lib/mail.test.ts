@@ -81,5 +81,26 @@ describe('mail helpers', () => {
     expect(body.html).toContain('Kardinal &lt;Pharmacy&gt;')
     expect(body.html).toContain('https://www.kardinalpharmacy.com/admin/login')
   })
-})
 
+  it('notifies the super admin when an invited admin signs in', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      RESEND_API_KEY: 'resend-key',
+      ADMIN_EMAIL_FROM: 'admin@kardinalpharmacy.com',
+      SITE_URL: 'https://www.kardinalpharmacy.com/',
+    }
+    getConfigMock.mockResolvedValue({ siteTitle: 'Kardinal <Pharmacy>' })
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    const { sendAdminSignedInEmail } = await import('@/lib/mail')
+
+    await sendAdminSignedInEmail('invited@kardinalpharmacy.com')
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.to).toBe('aminumohammed@kardinalpharmacy.com')
+    expect(body.subject).toBe('invited@kardinalpharmacy.com signed in to Kardinal <Pharmacy>')
+    expect(body.text).toContain('invited@kardinalpharmacy.com signed in')
+    expect(body.text).toContain('https://www.kardinalpharmacy.com/admin/panel')
+    expect(body.html).toContain('Kardinal &lt;Pharmacy&gt;')
+  })
+})
