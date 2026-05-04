@@ -21,8 +21,8 @@
 
   /* Font is injected by next/font as a CSS variable */
   --font: var(--font-poppins), sans-serif;
-  --radius:    14px;
-  --radius-sm: 8px;
+  --radius:    8px;
+  --radius-sm: 6px;
   --shadow:    0 4px 24px rgba(10,92,54,.08);
   --shadow-lg: 0 12px 40px rgba(10,92,54,.14);
   --transition: .25s cubic-bezier(.4,0,.2,1);
@@ -46,6 +46,7 @@ a { text-decoration: none; color: inherit; }
 ul { list-style: none; }
 img { max-width: 100%; display: block; }
 address { font-style: normal; }
+p, h1, h2, h3, a, button, input, textarea { overflow-wrap: anywhere; }
 
 /* Offset for fixed nav on anchor jumps */
 section[id] { scroll-margin-top: 76px; }
@@ -63,8 +64,8 @@ section[id] { scroll-margin-top: 76px; }
 .section--dark { background: var(--green-800); color: var(--white); }
 
 /* ── Typography ────────────────────────────── */
-h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; line-height: 1.15; letter-spacing: -.02em; }
-h2 { font-size: clamp(1.75rem, 3.5vw, 2.6rem); font-weight: 700; line-height: 1.2; letter-spacing: -.015em; }
+h1 { font-size: 3.4rem; font-weight: 700; line-height: 1.15; letter-spacing: 0; }
+h2 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; letter-spacing: 0; }
 h3 { font-size: 1.2rem; font-weight: 600; line-height: 1.3; }
 p  { color: var(--text-mid); }
 em { font-style: normal; color: var(--gold); }
@@ -82,7 +83,8 @@ em { font-style: normal; color: var(--gold); }
   cursor: pointer;
   border: 2px solid transparent;
   transition: var(--transition);
-  white-space: nowrap;
+  text-align: center;
+  justify-content: center;
 }
 .btn--lg { padding: 15px 32px; font-size: 1rem; }
 
@@ -356,6 +358,84 @@ em { font-style: normal; color: var(--gold); }
 
 
 /* ══════════════════════════════════════════════
+   ADMIN
+   ══════════════════════════════════════════════ */
+.admin-panel-header {
+  background: var(--green-800);
+  color: var(--white);
+  padding: 0 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 12px rgba(0,0,0,.15);
+}
+
+.admin-panel-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-panel-brand-text {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.admin-shell {
+  display: flex;
+  min-height: calc(100vh - 64px);
+}
+
+.admin-sidebar {
+  width: 210px;
+  border-right: 1px solid var(--border);
+  padding: 20px 10px;
+  position: sticky;
+  top: 64px;
+  height: calc(100vh - 64px);
+  overflow-y: auto;
+  flex-shrink: 0;
+  background: var(--white);
+}
+
+.admin-content {
+  flex: 1;
+  padding: 28px 32px 64px;
+  min-width: 0;
+}
+
+.admin-upload-row,
+.admin-product-upload-row,
+.admin-credential-row,
+.admin-item-head,
+.admin-user-row,
+.admin-add-row,
+.admin-price-row {
+  display: flex;
+}
+
+.admin-upload-row,
+.admin-product-upload-row,
+.admin-credential-row,
+.admin-add-row,
+.admin-price-row {
+  align-items: center;
+}
+
+.admin-user-row,
+.admin-item-head {
+  align-items: center;
+  justify-content: space-between;
+}
+
+
+/* ══════════════════════════════════════════════
    SCROLL REVEAL
    ══════════════════════════════════════════════ */
 .reveal { opacity: 0; transform: translateY(28px); transition: opacity .55s ease, transform .55s ease; }
@@ -368,27 +448,90 @@ em { font-style: normal; color: var(--gold); }
    RESPONSIVE
    ══════════════════════════════════════════════ */
 @media (max-width: 1024px) {
+  h1 { font-size: 3rem; }
+  h2 { font-size: 2.25rem; }
   .trust-grid { grid-template-columns: repeat(2, 1fr); }
   .footer-inner { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 860px) {
+  h1 { font-size: 2.55rem; }
+  h2 { font-size: 2rem; }
   .hero__inner { grid-template-columns: 1fr; }
   .hero__card  { display: none; }
   .services-grid, .products-grid, .location-grid { grid-template-columns: 1fr; }
   .about-inner { grid-template-columns: 1fr; gap: 48px; }
 }
 @media (max-width: 768px) {
+  .container { padding: 0 18px; }
   .section { padding: 72px 0; }
   .nav__links, .nav__cta { display: none; }
   .hamburger { display: flex; }
   .section-header { margin-bottom: 40px; }
   .trust-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .admin-panel-header {
+    height: auto;
+    min-height: 64px;
+    padding: 10px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .admin-panel-brand-text { font-size: .95rem; }
+  .admin-shell { display: block; min-height: auto; }
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 12px 12px 10px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--white);
+  }
+  .admin-sidebar > p { display: none; }
+  .admin-sidebar button {
+    width: auto !important;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    margin-bottom: 0 !important;
+  }
+  .admin-content { padding: 18px 14px 48px; }
+  .admin-upload-row,
+  .admin-product-upload-row,
+  .admin-credential-row,
+  .admin-add-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .admin-user-row {
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+  .admin-price-row { align-items: stretch; }
 }
 @media (max-width: 580px) {
+  h1 { font-size: 2.15rem; }
+  h2 { font-size: 1.75rem; }
   .hero { padding: 120px 0 80px; }
   .hero__actions { flex-direction: column; }
   .hero__actions .btn { text-align: center; justify-content: center; }
   .trust-grid { grid-template-columns: 1fr; }
   .footer-inner { grid-template-columns: 1fr; gap: 36px; }
   .footer-bottom .container { flex-direction: column; text-align: center; }
+  .section { padding: 60px 0; }
+  .section-header p { font-size: 1rem; }
+  .service-card,
+  .product-card,
+  .info-card {
+    padding: 26px 20px;
+  }
+  .whatsapp-btn {
+    right: 16px;
+    bottom: 16px;
+    width: 52px;
+    height: 52px;
+  }
 }

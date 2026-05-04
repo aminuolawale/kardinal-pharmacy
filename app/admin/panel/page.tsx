@@ -19,22 +19,10 @@ export default async function AdminPage() {
 
   return (
     <div style={{ minHeight: "100vh" }}>
-      <header style={{
-        background: "var(--green-800)",
-        color: "var(--white)",
-        padding: "0 32px",
-        height: 64,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        position: "sticky",
-        top: 0,
-        zIndex: 50,
-        boxShadow: "0 2px 12px rgba(0,0,0,.15)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <header className="admin-panel-header">
+        <div className="admin-panel-brand">
           <span style={{ fontSize: "1.4rem" }}>💊</span>
-          <span style={{ fontWeight: 700, fontSize: "1rem", letterSpacing: "-.01em" }}>
+          <span className="admin-panel-brand-text">
             Kardinal <span style={{ color: "var(--gold)", fontWeight: 400 }}>Admin</span>
           </span>
         </div>

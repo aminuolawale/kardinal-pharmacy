@@ -172,7 +172,7 @@ function ItemsList({ items, onAdd, onRemove, onUpdate, addLabel = 'Add Item' }: 
     <>
       {items.map((item) => (
         <div key={item.id} style={S.itemCard}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <div className="admin-item-head" style={{ marginBottom: 8 }}>
             <label style={{ ...S.label, margin: 0 }}>Title</label>
             <button onClick={() => onRemove(item.id)} style={S.deleteBtn}>Remove</button>
           </div>
@@ -199,7 +199,7 @@ function CredentialsList({ items, onChange }: { items: string[]; onChange: (item
   return (
     <>
       {items.map((cred, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+        <div key={i} className="admin-credential-row" style={{ gap: 8, marginBottom: 8 }}>
           <input
             value={cred}
             onChange={(e) => onChange(items.map((c, j) => (j === i ? e.target.value : c)))}
@@ -242,7 +242,7 @@ function AvatarUpload({ current, initials }: { current: string; initials: string
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+    <div className="admin-upload-row" style={{ gap: 20 }}>
       <div style={{
         width: 72, height: 72, borderRadius: '50%',
         background: 'var(--green-800)', overflow: 'hidden',
@@ -304,7 +304,7 @@ function ProductImageUpload({ current, onUploaded }: { current: string; onUpload
 
   return (
     <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div className="admin-product-upload-row" style={{ gap: 14 }}>
         <div style={{
           width: 72, height: 72, borderRadius: 8,
           background: 'var(--green-50)', border: `1.5px solid ${error ? '#fca5a5' : 'var(--border)'}`,
@@ -343,7 +343,7 @@ function ProductItemsList({ items, onAdd, onRemove, onUpdate }: {
     <>
       {items.map((item) => (
         <div key={item.id} style={S.itemCard}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <div className="admin-item-head" style={{ marginBottom: 10 }}>
             <label style={{ ...S.label, margin: 0 }}>Product Image</label>
             <button onClick={() => onRemove(item.id)} style={S.deleteBtn}>Remove</button>
           </div>
@@ -358,7 +358,7 @@ function ProductItemsList({ items, onAdd, onRemove, onUpdate }: {
             style={{ ...S.input, marginBottom: 10 }}
           />
           <label style={S.label}>Price</label>
-          <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: 10 }}>
+          <div className="admin-price-row" style={{ border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: 10 }}>
             <span style={{ padding: '9px 10px', background: 'var(--green-50)', color: 'var(--green-800)', fontWeight: 700, borderRight: '1px solid var(--border)', fontSize: '0.9rem', flexShrink: 0 }}>₦</span>
             <input
               value={item.price}
@@ -675,9 +675,9 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
           const isSuper = email.toLowerCase() === SUPER_ADMIN.toLowerCase()
           return (
             <div
+              className="admin-user-row"
               key={email}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '10px 14px',
                 border: '1px solid var(--border)',
                 borderRadius: 'var(--radius-sm)',
@@ -725,7 +725,7 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
 
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16 }}>
         <label style={S.label}>Add admin by email</label>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="admin-add-row" style={{ gap: 8 }}>
           <input
             type="email"
             value={newEmail}
@@ -773,19 +773,9 @@ export default function AdminForms({
   const [active, setActive] = useState<SectionId>('site')
 
   return (
-    <div style={{ display: 'flex', minHeight: 'calc(100vh - 64px)' }}>
+    <div className="admin-shell">
       {/* Sidebar */}
-      <aside style={{
-        width: 210,
-        borderRight: '1px solid var(--border)',
-        padding: '20px 10px',
-        position: 'sticky',
-        top: 64,
-        height: 'calc(100vh - 64px)',
-        overflowY: 'auto',
-        flexShrink: 0,
-        background: 'var(--white)',
-      }}>
+      <aside className="admin-sidebar">
         <p style={{
           fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)',
           letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -811,38 +801,10 @@ export default function AdminForms({
             {s.label}
           </button>
         ))}
-
-        {isSuperAdmin && (
-          <>
-            <div style={{ height: 1, background: 'var(--border)', margin: '12px 10px' }} />
-            <p style={{
-              fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)',
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              padding: '0 10px', marginBottom: 10,
-            }}>
-              Admin
-            </p>
-            <button
-              onClick={() => setActive('users')}
-              style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '9px 12px', borderRadius: 'var(--radius-sm)',
-                border: 'none', fontFamily: 'var(--font)',
-                fontSize: '0.875rem',
-                fontWeight: active === 'users' ? 600 : 400,
-                background: active === 'users' ? 'var(--green-800)' : 'transparent',
-                color: active === 'users' ? 'var(--white)' : 'var(--text)',
-                cursor: 'pointer', marginBottom: 2,
-              }}
-            >
-              Users
-            </button>
-          </>
-        )}
       </aside>
 
       {/* Content pane */}
-      <div style={{ flex: 1, padding: '28px 32px 64px', minWidth: 0 }}>
+      <div className="admin-content">
         {active === 'site'       && <SiteTitleSection  initial={config.siteTitle}    />}
         {active === 'hero'       && <HeroSection        initial={config.hero}         />}
         {active === 'pharmacist' && <PharmacistSection  initial={config.pharmacist}   />}
