@@ -1,7 +1,7 @@
 import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { auth } from '@/auth'
-import { getSiteAuditLog, recordSiteEdit } from '@/lib/audit'
+import { getSiteAuditLog, getSiteAuditLogs, recordSiteEdit } from '@/lib/audit'
 import { SUPER_ADMIN } from '@/lib/admins'
 import { getConfig, saveConfig } from '@/lib/config'
 import { sendSiteEditReportEmail } from '@/lib/mail'
@@ -30,6 +30,16 @@ export async function POST(request: Request) {
   const auditLog = await getSiteAuditLog(id)
   if (!auditLog) {
     return NextResponse.json({ restored: false, error: 'Audit log was not found.' }, { status: 404 })
+  }
+
+  if (snapshot === 'after') {
+    const [latestLog] = await getSiteAuditLogs(1)
+    if (latestLog?.id === auditLog.id) {
+      return NextResponse.json(
+        { restored: false, error: 'This revision is already the current saved version.' },
+        { status: 409 },
+      )
+    }
   }
 
   const beforeConfig = await getConfig()

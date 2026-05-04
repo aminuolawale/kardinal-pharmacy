@@ -441,6 +441,283 @@ em { font-style: normal; color: var(--gold); }
   gap: 16px;
 }
 
+.admin-diff-panel {
+  margin-top: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.admin-diff-legend {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.admin-diff-chip {
+  border: 1px solid #f3d68a;
+  background: #fff7df;
+  color: #7a4f00;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+}
+
+.admin-diff-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.admin-diff-frame {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--green-50);
+  min-width: 0;
+}
+
+.admin-diff-frame-label {
+  background: var(--green-800);
+  color: var(--white);
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  padding: 7px 10px;
+  text-transform: uppercase;
+}
+
+.admin-diff-frame > :not(.admin-diff-frame-label) {
+  padding: 14px;
+}
+
+.admin-diff-changed {
+  outline: 2px solid #f2c94c;
+  background: #fff7d6;
+  border-radius: 5px;
+  box-shadow: 0 0 0 4px rgba(242, 201, 76, .18);
+}
+
+.admin-diff-site-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text);
+  font-size: .8rem;
+}
+
+.admin-diff-site-title > span {
+  font-weight: 800;
+  color: var(--green-800);
+}
+
+.admin-diff-site-title nav {
+  display: flex;
+  gap: 10px;
+  color: var(--text-muted);
+  font-size: .68rem;
+}
+
+.admin-diff-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(110px, .8fr);
+  gap: 14px;
+  align-items: center;
+  min-height: 180px;
+  background: linear-gradient(135deg, var(--green-50), #ffffff);
+}
+
+.admin-diff-pill {
+  display: inline-block;
+  background: var(--white);
+  color: var(--green-800);
+  border: 1px solid var(--green-200);
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: .68rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.admin-diff-hero h3,
+.admin-diff-section-head h3,
+.admin-diff-about h3 {
+  font-size: 1.15rem;
+  line-height: 1.15;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.admin-diff-hero h3 span,
+.admin-diff-hero h3 em {
+  display: block;
+}
+
+.admin-diff-hero h3 em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.admin-diff-hero p,
+.admin-diff-section-head p,
+.admin-diff-mini-card p,
+.admin-diff-about p {
+  color: var(--text-mid);
+  font-size: .74rem;
+  line-height: 1.45;
+}
+
+.admin-diff-profile-card {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  text-align: center;
+  min-width: 0;
+}
+
+.admin-diff-profile-card strong,
+.admin-diff-profile-card span {
+  font-size: .76rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.admin-diff-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--green-100);
+  color: var(--green-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.admin-diff-avatar img,
+.admin-diff-mini-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-diff-about {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+  background: var(--white);
+}
+
+.admin-diff-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.admin-diff-tags span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: .68rem;
+}
+
+.admin-diff-section-head {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.admin-diff-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-diff-mini-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: var(--white);
+  min-width: 0;
+}
+
+.admin-diff-mini-card strong {
+  display: block;
+  color: var(--text);
+  font-size: .78rem;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere;
+}
+
+.admin-diff-products {
+  background: var(--green-800);
+  color: var(--white);
+}
+
+.admin-diff-products .admin-diff-section-head h3,
+.admin-diff-products .admin-diff-section-head p {
+  color: var(--white);
+}
+
+.admin-diff-products .admin-diff-mini-card {
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.2);
+}
+
+.admin-diff-products .admin-diff-mini-card strong,
+.admin-diff-products .admin-diff-mini-card p {
+  color: var(--white);
+}
+
+.admin-diff-products .admin-diff-mini-card span {
+  color: var(--gold);
+  font-size: .74rem;
+  font-weight: 800;
+}
+
+.admin-diff-mini-card img,
+.admin-diff-image-placeholder {
+  height: 60px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  background: rgba(255,255,255,.18);
+}
+
+.admin-diff-overview {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-diff-overview div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  background: var(--white);
+}
+
+.admin-diff-overview strong,
+.admin-diff-overview span {
+  font-size: .76rem;
+}
+
+.admin-diff-overview span {
+  color: var(--text-mid);
+  text-align: right;
+}
+
 
 /* ══════════════════════════════════════════════
    SCROLL REVEAL
@@ -521,6 +798,14 @@ em { font-style: normal; color: var(--gold); }
     align-items: stretch;
     flex-direction: column;
   }
+  .admin-diff-grid,
+  .admin-diff-hero,
+  .admin-diff-about {
+    grid-template-columns: 1fr;
+  }
+  .admin-diff-legend {
+    justify-content: flex-start;
+  }
   .admin-price-row { align-items: stretch; }
 }
 @media (max-width: 580px) {
@@ -544,5 +829,12 @@ em { font-style: normal; color: var(--gold); }
     bottom: 16px;
     width: 52px;
     height: 52px;
+  }
+  .admin-diff-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-diff-site-title {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

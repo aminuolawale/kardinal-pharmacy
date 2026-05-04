@@ -755,9 +755,284 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
   )
 }
 
+function sameValue(a: unknown, b: unknown) {
+  return JSON.stringify(a) === JSON.stringify(b)
+}
+
+function changedClass(changed: boolean) {
+  return changed ? ' admin-diff-changed' : ''
+}
+
+function initialsFromName(name: string) {
+  return name
+    .split(' ')
+    .filter((word) => !word.endsWith('.'))
+    .map((word) => word[0])
+    .join('')
+    .slice(0, 2)
+}
+
+function itemChanged<T extends { id: string }>(item: T, otherItems: T[]) {
+  const matchingItem = otherItems.find((otherItem) => otherItem.id === item.id)
+  return !matchingItem || !sameValue(item, matchingItem)
+}
+
+function PreviewFrame({
+  label,
+  config,
+  compareConfig,
+  section,
+}: {
+  label: string
+  config: SiteConfig
+  compareConfig: SiteConfig
+  section: string
+}) {
+  return (
+    <div className="admin-diff-frame">
+      <div className="admin-diff-frame-label">{label}</div>
+      <SiteSnapshot config={config} compareConfig={compareConfig} section={section} />
+    </div>
+  )
+}
+
+function SiteSnapshot({
+  config,
+  compareConfig,
+  section,
+}: {
+  config: SiteConfig
+  compareConfig: SiteConfig
+  section: string
+}) {
+  const normalizedSection = section.toLowerCase()
+
+  if (normalizedSection.includes('site title')) {
+    return (
+      <div className="admin-diff-site-title">
+        <span className={changedClass(config.siteTitle !== compareConfig.siteTitle)}>
+          {config.siteTitle}
+        </span>
+        <nav>
+          <span>Services</span>
+          <span>About</span>
+          <span>Visit</span>
+        </nav>
+      </div>
+    )
+  }
+
+  if (normalizedSection.includes('hero')) {
+    return <HeroSnapshot config={config} compareConfig={compareConfig} />
+  }
+
+  if (normalizedSection.includes('pharmacist')) {
+    return <PharmacistSnapshot config={config} compareConfig={compareConfig} />
+  }
+
+  if (normalizedSection.includes('services')) {
+    return <ServicesSnapshot config={config} compareConfig={compareConfig} />
+  }
+
+  if (normalizedSection.includes('why kardinal')) {
+    return <TrustSnapshot config={config} compareConfig={compareConfig} />
+  }
+
+  if (normalizedSection.includes('cosmetic')) {
+    return <CosmeticSnapshot config={config} compareConfig={compareConfig} />
+  }
+
+  return <OverviewSnapshot config={config} compareConfig={compareConfig} />
+}
+
+function HeroSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const { hero, pharmacist } = config
+  const compareHero = compareConfig.hero
+  const comparePharmacist = compareConfig.pharmacist
+
+  return (
+    <div className="admin-diff-hero">
+      <div>
+        <p className="admin-diff-pill">Ijegun, Lagos</p>
+        <h3>
+          <span className={changedClass(hero.headlinePrimary !== compareHero.headlinePrimary)}>
+            {hero.headlinePrimary}
+          </span>
+          <em className={changedClass(hero.headlineEmphasis !== compareHero.headlineEmphasis)}>
+            {hero.headlineEmphasis}
+          </em>
+        </h3>
+        <p className={changedClass(hero.subtitle !== compareHero.subtitle)}>{hero.subtitle}</p>
+      </div>
+      <div className="admin-diff-profile-card">
+        <AvatarSnapshot
+          name={pharmacist.name}
+          avatarUrl={pharmacist.avatarUrl}
+          changed={pharmacist.avatarUrl !== comparePharmacist.avatarUrl}
+        />
+        <strong className={changedClass(pharmacist.name !== comparePharmacist.name)}>{pharmacist.name}</strong>
+        <span className={changedClass(pharmacist.description !== comparePharmacist.description)}>
+          {pharmacist.description}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function PharmacistSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const { pharmacist } = config
+  const comparePharmacist = compareConfig.pharmacist
+
+  return (
+    <div className="admin-diff-about">
+      <AvatarSnapshot
+        name={pharmacist.name}
+        avatarUrl={pharmacist.avatarUrl}
+        changed={pharmacist.avatarUrl !== comparePharmacist.avatarUrl}
+      />
+      <div>
+        <h3 className={changedClass(pharmacist.name !== comparePharmacist.name)}>{pharmacist.name}</h3>
+        <p className={changedClass(pharmacist.description !== comparePharmacist.description)}>
+          {pharmacist.description}
+        </p>
+        <p className={changedClass(pharmacist.profileDescription !== comparePharmacist.profileDescription)}>
+          {pharmacist.profileDescription.split('\n\n')[0] || 'No profile text'}
+        </p>
+        <div className="admin-diff-tags">
+          {pharmacist.credentials.map((credential) => (
+            <span
+              key={credential}
+              className={changedClass(!comparePharmacist.credentials.includes(credential))}
+            >
+              {credential}
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ServicesSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const { services } = config
+  const compareServices = compareConfig.services
+
+  return (
+    <div>
+      <div className="admin-diff-section-head">
+        <h3 className={changedClass(services.headline !== compareServices.headline)}>{services.headline}</h3>
+        <p className={changedClass(services.subtitle !== compareServices.subtitle)}>{services.subtitle}</p>
+      </div>
+      <div className="admin-diff-card-grid">
+        {services.items.slice(0, 4).map((item) => (
+          <div key={item.id} className={`admin-diff-mini-card${changedClass(itemChanged(item, compareServices.items))}`}>
+            <strong>{item.title}</strong>
+            <p>{item.description}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TrustSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const { trust } = config
+  const compareTrust = compareConfig.trust
+
+  return (
+    <div className="admin-diff-card-grid">
+      {trust.items.slice(0, 4).map((item) => (
+        <div key={item.id} className={`admin-diff-mini-card${changedClass(itemChanged(item, compareTrust.items))}`}>
+          <strong>{item.title}</strong>
+          <p>{item.description}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function CosmeticSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const { cosmeticLine } = config
+  const compareLine = compareConfig.cosmeticLine
+
+  return (
+    <div className="admin-diff-products">
+      <div className="admin-diff-section-head">
+        <h3 className={changedClass(cosmeticLine.headline !== compareLine.headline)}>{cosmeticLine.headline}</h3>
+        <p className={changedClass(cosmeticLine.subtitle !== compareLine.subtitle)}>{cosmeticLine.subtitle}</p>
+      </div>
+      <div className="admin-diff-card-grid">
+        {cosmeticLine.items.slice(0, 4).map((item) => (
+          <div key={item.id} className={`admin-diff-mini-card${changedClass(itemChanged(item, compareLine.items))}`}>
+            {item.imageUrl ? <img src={item.imageUrl} alt="" /> : <div className="admin-diff-image-placeholder" />}
+            <strong>{item.title}</strong>
+            <p>{item.description}</p>
+            {item.price && <span>₦{item.price}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function OverviewSnapshot({ config, compareConfig }: { config: SiteConfig; compareConfig: SiteConfig }) {
+  const rows = [
+    { label: 'Site', value: config.siteTitle, changed: config.siteTitle !== compareConfig.siteTitle },
+    { label: 'Hero', value: config.hero.headlinePrimary, changed: !sameValue(config.hero, compareConfig.hero) },
+    { label: 'Pharmacist', value: config.pharmacist.name, changed: !sameValue(config.pharmacist, compareConfig.pharmacist) },
+    { label: 'Services', value: config.services.headline, changed: !sameValue(config.services, compareConfig.services) },
+    { label: 'Why Kardinal', value: `${config.trust.items.length} reasons`, changed: !sameValue(config.trust, compareConfig.trust) },
+    { label: 'Cosmetics', value: config.cosmeticLine.headline, changed: !sameValue(config.cosmeticLine, compareConfig.cosmeticLine) },
+  ]
+
+  return (
+    <div className="admin-diff-overview">
+      {rows.map((row) => (
+        <div key={row.label} className={changedClass(row.changed)}>
+          <strong>{row.label}</strong>
+          <span>{row.value}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AvatarSnapshot({ name, avatarUrl, changed }: { name: string; avatarUrl: string; changed: boolean }) {
+  return (
+    <div className={`admin-diff-avatar${changedClass(changed)}`}>
+      {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{initialsFromName(name)}</span>}
+    </div>
+  )
+}
+
+function HistoryDiff({ log }: { log: SiteAuditLog }) {
+  return (
+    <div className="admin-diff-panel">
+      <div className="admin-diff-legend">
+        <span className="admin-diff-chip">Highlighted content changed in this revision</span>
+      </div>
+      <div className="admin-diff-grid">
+        <PreviewFrame
+          label="Before"
+          config={log.beforeConfig}
+          compareConfig={log.afterConfig}
+          section={log.section}
+        />
+        <PreviewFrame
+          label="After"
+          config={log.afterConfig}
+          compareConfig={log.beforeConfig}
+          section={log.section}
+        />
+      </div>
+    </div>
+  )
+}
+
 function HistorySection({ logs }: { logs: SiteAuditLog[] }) {
   const [isPending, startTransition] = useTransition()
   const [message, setMessage] = useState('')
+  const [openLogId, setOpenLogId] = useState<string | null>(logs[0]?.id ?? null)
 
   const restore = (id: string, snapshot: 'before' | 'after') => {
     startTransition(async () => {
@@ -786,48 +1061,88 @@ function HistorySection({ logs }: { logs: SiteAuditLog[] }) {
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No site changes have been recorded yet.</p>
       ) : (
         <div style={{ display: 'grid', gap: 10 }}>
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className="admin-history-row"
-              style={{
-                border: '1px solid var(--border)',
-                borderRadius: 'var(--radius-sm)',
-                padding: 14,
-                background: 'var(--white)',
-              }}
-            >
-              <div style={{ minWidth: 0 }}>
-                <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.95rem' }}>
-                  {log.section}
-                </p>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-mid)', marginTop: 3 }}>
-                  {log.summary}
-                </p>
-                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
-                  {log.actorEmail} · {new Date(log.createdAt).toLocaleString()}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+          {logs.map((log, index) => {
+            const isOpen = openLogId === log.id
+            const isLatest = index === 0
+
+            return (
+              <div
+                key={log.id}
+                style={{
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: 14,
+                  background: 'var(--white)',
+                }}
+              >
                 <button
                   type="button"
-                  onClick={() => restore(log.id, 'before')}
-                  disabled={isPending}
-                  style={{ ...S.deleteBtn, opacity: isPending ? 0.6 : 1 }}
+                  className="admin-history-row"
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenLogId(isOpen ? null : log.id)}
+                  style={{
+                    width: '100%',
+                    border: 0,
+                    background: 'transparent',
+                    padding: 0,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font)',
+                  }}
                 >
-                  Restore before
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.95rem' }}>
+                      {log.section}
+                    </p>
+                    <p style={{ fontSize: '0.82rem', color: 'var(--text-mid)', marginTop: 3 }}>
+                      {log.summary}
+                    </p>
+                    <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                      {log.actorEmail} · {new Date(log.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                  <span style={{
+                    fontSize: '0.75rem',
+                    color: 'var(--green-700)',
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}>
+                    {isOpen ? 'Hide diff' : 'View diff'}
+                  </span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => restore(log.id, 'after')}
-                  disabled={isPending}
-                  style={{ ...S.saveBtn, borderRadius: 'var(--radius-sm)', opacity: isPending ? 0.6 : 1 }}
-                >
-                  Restore after
-                </button>
+
+                {isOpen && (
+                  <>
+                    <HistoryDiff log={log} />
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+                      <button
+                        type="button"
+                        onClick={() => restore(log.id, 'before')}
+                        disabled={isPending}
+                        style={{ ...S.deleteBtn, opacity: isPending ? 0.6 : 1 }}
+                      >
+                        Restore before
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => restore(log.id, 'after')}
+                        disabled={isPending || isLatest}
+                        title={isLatest ? 'This is already the current saved version.' : undefined}
+                        style={{
+                          ...S.saveBtn,
+                          borderRadius: 'var(--radius-sm)',
+                          opacity: isPending || isLatest ? 0.45 : 1,
+                          cursor: isLatest ? 'not-allowed' : 'pointer',
+                        }}
+                      >
+                        {isLatest ? 'Current version' : 'Restore after'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </SectionCard>

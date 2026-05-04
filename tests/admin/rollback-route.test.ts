@@ -4,6 +4,7 @@ import type { SiteConfig, SiteAuditLog } from '@/lib/types'
 const {
   authMock,
   getSiteAuditLogMock,
+  getSiteAuditLogsMock,
   recordSiteEditMock,
   getConfigMock,
   saveConfigMock,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   getSiteAuditLogMock: vi.fn(),
+  getSiteAuditLogsMock: vi.fn(),
   recordSiteEditMock: vi.fn(),
   getConfigMock: vi.fn(),
   saveConfigMock: vi.fn(),
@@ -29,6 +31,7 @@ vi.mock('@/lib/admins', () => ({
 
 vi.mock('@/lib/audit', () => ({
   getSiteAuditLog: getSiteAuditLogMock,
+  getSiteAuditLogs: getSiteAuditLogsMock,
   recordSiteEdit: recordSiteEditMock,
 }))
 
@@ -73,6 +76,7 @@ beforeEach(() => {
   vi.resetModules()
   authMock.mockReset()
   getSiteAuditLogMock.mockReset()
+  getSiteAuditLogsMock.mockReset()
   recordSiteEditMock.mockReset()
   getConfigMock.mockReset()
   saveConfigMock.mockReset()
@@ -129,6 +133,7 @@ describe('/api/admin/audit/rollback', () => {
     }
     authMock.mockResolvedValue({ user: { email: 'aminumohammed@kardinalpharmacy.com' } })
     getSiteAuditLogMock.mockResolvedValue(auditLog)
+    getSiteAuditLogsMock.mockResolvedValue([{ id: 'newer-audit' }])
     getConfigMock.mockResolvedValue(beforeConfig)
     recordSiteEditMock.mockResolvedValue({ createdAt: '2026-05-04T10:30:00.000Z' })
     sendSiteEditReportEmailMock.mockResolvedValue(undefined)
@@ -154,6 +159,31 @@ describe('/api/admin/audit/rollback', () => {
       editedAt: '2026-05-04T10:30:00.000Z',
       afterConfig: restoredConfig,
     })
+  })
+
+  it('rejects restoring the after snapshot for the latest revision', async () => {
+    const auditLog: SiteAuditLog = {
+      id: 'latest',
+      actorEmail: 'editor@example.com',
+      section: 'Hero',
+      summary: 'Updated hero.',
+      createdAt: '2026-05-04T11:00:00.000Z',
+      beforeConfig: siteConfig('Before'),
+      afterConfig: siteConfig('Current'),
+    }
+    authMock.mockResolvedValue({ user: { email: 'aminumohammed@kardinalpharmacy.com' } })
+    getSiteAuditLogMock.mockResolvedValue(auditLog)
+    getSiteAuditLogsMock.mockResolvedValue([{ id: 'latest' }])
+    const { POST } = await import('@/app/api/admin/audit/rollback/route')
+
+    const response = await POST(jsonRequest({ id: 'latest', snapshot: 'after' }))
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      restored: false,
+      error: 'This revision is already the current saved version.',
+    })
+    expect(saveConfigMock).not.toHaveBeenCalled()
   })
 
   it('can restore the before snapshot from a change', async () => {
