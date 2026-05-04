@@ -630,7 +630,11 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: trimmed }),
       })
-      const result = await response.json()
+      const result = await response.json().catch(() => ({
+        added: false,
+        emailSent: false,
+        error: 'Admin could not be added.',
+      }))
 
       if (result.added) {
         setAdmins((prev) => prev.includes(trimmed) ? prev : [...prev, trimmed])
@@ -653,7 +657,8 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
-      if (response.ok) {
+      const result = await response.json().catch(() => ({ removed: response.ok }))
+      if (result.removed) {
         setAdmins((prev) => prev.filter((e) => e !== email))
       }
     })

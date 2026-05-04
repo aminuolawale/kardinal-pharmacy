@@ -6,9 +6,14 @@ import { sendNewAdminEmail } from '@/lib/mail'
 export const runtime = 'nodejs'
 
 async function requireSuperAdmin() {
-  const session = await auth()
-  const email = session?.user?.email?.toLowerCase()
-  return email === SUPER_ADMIN.toLowerCase()
+  try {
+    const session = await auth()
+    const email = session?.user?.email?.toLowerCase()
+    return email === SUPER_ADMIN.toLowerCase()
+  } catch (error) {
+    console.error('Failed to verify admin session', error)
+    return false
+  }
 }
 
 export async function POST(request: Request) {
@@ -26,7 +31,17 @@ export async function POST(request: Request) {
     )
   }
 
-  const { emails } = await getAdmins()
+  let emails: string[]
+  try {
+    ;({ emails } = await getAdmins())
+  } catch (error) {
+    console.error('Failed to read admins', error)
+    return NextResponse.json(
+      { added: false, emailSent: false, error: 'Admin list could not be loaded.' },
+      { status: 500 },
+    )
+  }
+
   if (emails.some((email) => email.toLowerCase() === trimmed)) {
     return NextResponse.json(
       { added: false, emailSent: false, error: 'This admin already exists.' },
@@ -69,8 +84,13 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ removed: false })
   }
 
-  const { emails } = await getAdmins()
-  await saveAdmins({ emails: emails.filter((email) => email.toLowerCase() !== target) })
+  try {
+    const { emails } = await getAdmins()
+    await saveAdmins({ emails: emails.filter((email) => email.toLowerCase() !== target) })
+  } catch (error) {
+    console.error('Failed to remove admin', error)
+    return NextResponse.json({ removed: false, error: 'Admin could not be removed.' }, { status: 500 })
+  }
+
   return NextResponse.json({ removed: true })
 }
-

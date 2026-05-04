@@ -11,9 +11,23 @@ type AdminsData = { emails: string[] }
 type AdminsInput = AdminsData | string[] | null | undefined
 
 function getKvConfig() {
-  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN
+  const urlCandidates = [
+    process.env.KV_REST_API_URL,
+    process.env.UPSTASH_REDIS_REST_URL,
+    process.env.KV_REST_API_TOKEN,
+    process.env.UPSTASH_REDIS_REST_TOKEN,
+  ].filter((value): value is string => !!value)
+  const tokenCandidates = [
+    process.env.KV_REST_API_TOKEN,
+    process.env.UPSTASH_REDIS_REST_TOKEN,
+    process.env.KV_REST_API_URL,
+    process.env.UPSTASH_REDIS_REST_URL,
+  ].filter((value): value is string => !!value)
+
+  const url = urlCandidates.find((value) => value.startsWith('http'))
+  const token = tokenCandidates.find((value) => !value.startsWith('http'))
   if (!url || !token) return null
+
   return { url: url.replace(/\/$/, ''), token }
 }
 

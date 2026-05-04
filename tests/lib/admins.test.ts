@@ -117,4 +117,39 @@ describe('admin storage', () => {
       emails: ['aminumohammed@kardinalpharmacy.com', 'file@example.com'],
     })
   })
+
+  it('detects and corrects swapped Upstash URL and token env values', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'upstash-token-value'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'https://upstash.example.com'
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ result: JSON.stringify({ emails: ['kv@example.com'] }) }),
+      })
+    vi.stubGlobal('fetch', fetchMock)
+    const { readAdmins } = await import('@/lib/admins')
+
+    await expect(readAdmins()).resolves.toEqual({
+      emails: ['aminumohammed@kardinalpharmacy.com', 'kv@example.com'],
+    })
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://upstash.example.com/get/kardinal%3Aadmins',
+      expect.objectContaining({
+        headers: { Authorization: 'Bearer upstash-token-value' },
+      }),
+    )
+  })
+
+  it('ignores token-only Upstash env values and keeps local writes working', async () => {
+    process.env.UPSTASH_REDIS_REST_URL = 'token-shaped-value'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'another-token-shaped-value'
+    const { saveAdmins } = await import('@/lib/admins')
+
+    await saveAdmins({ emails: ['local@example.com'] })
+
+    const raw = await fs.readFile(path.join(tempDir, 'data', 'admins.json'), 'utf-8')
+    expect(raw).toBe(JSON.stringify({
+      emails: ['aminumohammed@kardinalpharmacy.com', 'local@example.com'],
+    }, null, 2))
+  })
 })
