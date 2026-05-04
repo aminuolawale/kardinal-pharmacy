@@ -6,7 +6,8 @@ import { auth, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
-import { sendNewAdminEmail } from '@/lib/mail'
+import { recordSiteEdit } from '@/lib/audit'
+import { sendNewAdminEmail, sendSiteEditReportEmail } from '@/lib/mail'
 import type { SiteConfig } from '@/lib/types'
 
 async function requireAuth() {
@@ -14,18 +15,66 @@ async function requireAuth() {
   const email = session?.user?.email?.toLowerCase()
   if (!email) redirect('/admin/login')
 
-  if (email === SUPER_ADMIN.toLowerCase()) return
+  if (email === SUPER_ADMIN.toLowerCase()) return email
 
   const { emails } = await getAdmins()
   if (!emails.some((adminEmail) => adminEmail.toLowerCase() === email)) {
     redirect('/admin/login')
   }
+
+  return email
 }
 
 async function requireSuperAdmin() {
   const session = await auth()
   const email = session?.user?.email?.toLowerCase()
   if (email !== SUPER_ADMIN.toLowerCase()) redirect('/admin/login')
+  return email
+}
+
+async function saveAuditedConfig({
+  actorEmail,
+  section,
+  summary,
+  beforeConfig,
+  afterConfig,
+}: {
+  actorEmail: string
+  section: string
+  summary: string
+  beforeConfig: SiteConfig
+  afterConfig: SiteConfig
+}) {
+  await saveConfig(afterConfig)
+  revalidatePath('/', 'layout')
+
+  const fallbackEditedAt = new Date().toISOString()
+  let editedAt = fallbackEditedAt
+
+  try {
+    const auditLog = await recordSiteEdit({
+      actorEmail,
+      section,
+      summary,
+      beforeConfig,
+      afterConfig,
+    })
+    editedAt = auditLog?.createdAt ?? fallbackEditedAt
+  } catch (error) {
+    console.error('Failed to record site edit audit log', error)
+  }
+
+  try {
+    await sendSiteEditReportEmail({
+      actorEmail,
+      section,
+      summary,
+      editedAt,
+      afterConfig,
+    })
+  } catch (error) {
+    console.error('Failed to send site edit report email', error)
+  }
 }
 
 export async function logout() {
@@ -34,49 +83,79 @@ export async function logout() {
 
 /* ── Site content ─────────────────────────────────────────── */
 export async function saveSiteTitle(siteTitle: string) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, siteTitle })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Site title',
+    summary: `Updated site title from "${config.siteTitle}" to "${siteTitle}".`,
+    beforeConfig: config,
+    afterConfig: { ...config, siteTitle },
+  })
 }
 
 export async function saveHero(hero: SiteConfig['hero']) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, hero })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Hero',
+    summary: 'Updated hero headline and supporting copy.',
+    beforeConfig: config,
+    afterConfig: { ...config, hero },
+  })
 }
 
 export async function savePharmacist(pharmacist: SiteConfig['pharmacist']) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, pharmacist })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Pharmacist profile',
+    summary: 'Updated pharmacist profile details.',
+    beforeConfig: config,
+    afterConfig: { ...config, pharmacist },
+  })
 }
 
 export async function saveServices(services: SiteConfig['services']) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, services })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Services',
+    summary: `Updated services content with ${services.items.length} service item${services.items.length === 1 ? '' : 's'}.`,
+    beforeConfig: config,
+    afterConfig: { ...config, services },
+  })
 }
 
 export async function saveTrust(trust: SiteConfig['trust']) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, trust })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Why Kardinal',
+    summary: `Updated trust content with ${trust.items.length} reason${trust.items.length === 1 ? '' : 's'}.`,
+    beforeConfig: config,
+    afterConfig: { ...config, trust },
+  })
 }
 
 export async function saveCosmeticLine(cosmeticLine: SiteConfig['cosmeticLine']) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const config = await getConfig()
-  await saveConfig({ ...config, cosmeticLine })
-  revalidatePath('/', 'layout')
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Cosmetic line',
+    summary: `Updated cosmetic line with ${cosmeticLine.items.length} product${cosmeticLine.items.length === 1 ? '' : 's'}.`,
+    beforeConfig: config,
+    afterConfig: { ...config, cosmeticLine },
+  })
 }
 
 export async function uploadAvatar(formData: FormData) {
-  await requireAuth()
+  const actorEmail = await requireAuth()
   const file = formData.get('avatar') as File
   if (!file || file.size === 0) return
 
@@ -89,11 +168,16 @@ export async function uploadAvatar(formData: FormData) {
   await fs.writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()))
 
   const config = await getConfig()
-  await saveConfig({
-    ...config,
-    pharmacist: { ...config.pharmacist, avatarUrl: `/uploads/${filename}` },
+  await saveAuditedConfig({
+    actorEmail,
+    section: 'Pharmacist photo',
+    summary: 'Updated pharmacist profile photo.',
+    beforeConfig: config,
+    afterConfig: {
+      ...config,
+      pharmacist: { ...config.pharmacist, avatarUrl: `/uploads/${filename}` },
+    },
   })
-  revalidatePath('/', 'layout')
 }
 
 /* ── User management (super admin only) ──────────────────── */

@@ -8,8 +8,10 @@ const redirectMock = vi.fn((path: string) => {
 const getAdminsMock = vi.fn()
 const saveAdminsMock = vi.fn()
 const sendNewAdminEmailMock = vi.fn()
+const sendSiteEditReportEmailMock = vi.fn()
 const getConfigMock = vi.fn()
 const saveConfigMock = vi.fn()
+const recordSiteEditMock = vi.fn()
 const revalidatePathMock = vi.fn()
 
 vi.mock('@/auth', () => ({
@@ -38,6 +40,11 @@ vi.mock('@/lib/config', () => ({
 
 vi.mock('@/lib/mail', () => ({
   sendNewAdminEmail: sendNewAdminEmailMock,
+  sendSiteEditReportEmail: sendSiteEditReportEmailMock,
+}))
+
+vi.mock('@/lib/audit', () => ({
+  recordSiteEdit: recordSiteEditMock,
 }))
 
 beforeEach(() => {
@@ -47,8 +54,10 @@ beforeEach(() => {
   getAdminsMock.mockReset()
   saveAdminsMock.mockReset()
   sendNewAdminEmailMock.mockReset()
+  sendSiteEditReportEmailMock.mockReset()
   getConfigMock.mockReset()
   saveConfigMock.mockReset()
+  recordSiteEditMock.mockReset()
   revalidatePathMock.mockReset()
 })
 
@@ -161,9 +170,40 @@ describe('protected site-content actions', () => {
     authMock.mockResolvedValue({ user: { email: 'editor@example.com' } })
     getAdminsMock.mockResolvedValue({ emails: ['editor@example.com'] })
     getConfigMock.mockResolvedValue({ siteTitle: 'Old title', hero: {} })
+    recordSiteEditMock.mockResolvedValue({ createdAt: '2026-05-04T10:30:00.000Z' })
+    sendSiteEditReportEmailMock.mockResolvedValue(undefined)
     const { saveSiteTitle } = await import('@/app/admin/actions')
 
     await saveSiteTitle('New title')
+
+    expect(saveConfigMock).toHaveBeenCalledWith({ siteTitle: 'New title', hero: {} })
+    expect(revalidatePathMock).toHaveBeenCalledWith('/', 'layout')
+    expect(recordSiteEditMock).toHaveBeenCalledWith({
+      actorEmail: 'editor@example.com',
+      section: 'Site title',
+      summary: 'Updated site title from "Old title" to "New title".',
+      beforeConfig: { siteTitle: 'Old title', hero: {} },
+      afterConfig: { siteTitle: 'New title', hero: {} },
+    })
+    expect(sendSiteEditReportEmailMock).toHaveBeenCalledWith({
+      actorEmail: 'editor@example.com',
+      section: 'Site title',
+      summary: 'Updated site title from "Old title" to "New title".',
+      editedAt: '2026-05-04T10:30:00.000Z',
+      afterConfig: { siteTitle: 'New title', hero: {} },
+    })
+  })
+
+  it('still saves content when audit email delivery fails', async () => {
+    authMock.mockResolvedValue({ user: { email: 'editor@example.com' } })
+    getAdminsMock.mockResolvedValue({ emails: ['editor@example.com'] })
+    getConfigMock.mockResolvedValue({ siteTitle: 'Old title', hero: {} })
+    recordSiteEditMock.mockRejectedValue(new Error('audit down'))
+    sendSiteEditReportEmailMock.mockRejectedValue(new Error('mail down'))
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const { saveSiteTitle } = await import('@/app/admin/actions')
+
+    await expect(saveSiteTitle('New title')).resolves.toBeUndefined()
 
     expect(saveConfigMock).toHaveBeenCalledWith({ siteTitle: 'New title', hero: {} })
     expect(revalidatePathMock).toHaveBeenCalledWith('/', 'layout')

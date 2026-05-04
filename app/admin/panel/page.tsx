@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { getConfig } from "@/lib/config"
 import { getAdmins, SUPER_ADMIN } from "@/lib/admins"
+import { getSiteAuditLogs } from "@/lib/audit"
 import AdminForms from "../AdminForms"
 import { logout } from "../actions"
 
@@ -16,6 +17,10 @@ export default async function AdminPage() {
     admins.some((email) => email.toLowerCase() === userEmail)
 
   if (!isAllowedAdmin) redirect("/admin/login")
+
+  const auditLogs = userEmail === SUPER_ADMIN.toLowerCase()
+    ? await getSiteAuditLogs()
+    : []
 
   return (
     <div style={{ minHeight: "100vh" }}>
@@ -46,7 +51,7 @@ export default async function AdminPage() {
         </form>
       </header>
 
-      <AdminForms config={config} userEmail={userEmail} admins={admins} />
+      <AdminForms config={config} userEmail={userEmail} admins={admins} auditLogs={auditLogs} />
     </div>
   )
 }

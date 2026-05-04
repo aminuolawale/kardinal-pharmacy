@@ -1,4 +1,6 @@
 import { getConfig } from './config'
+import { SUPER_ADMIN } from './constants'
+import type { SiteConfig } from './types'
 
 function firstEnv(...names: string[]): string | undefined {
   for (const name of names) {
@@ -122,6 +124,51 @@ export async function sendAdminSignedInEmail(adminEmail: string) {
         <p><strong>${safeAdminEmail}</strong> signed in to the <strong>${safeSiteName}</strong> admin panel.</p>
         <p>Admin panel: <a href="${safeAdminUrl}">${safeAdminUrl}</a></p>
         <p>This notification is sent when an invited admin successfully signs in.</p>
+      </div>
+    `,
+  })
+}
+
+export async function sendSiteEditReportEmail({
+  actorEmail,
+  section,
+  summary,
+  editedAt,
+  afterConfig,
+}: {
+  actorEmail: string
+  section: string
+  summary: string
+  editedAt: string
+  afterConfig: SiteConfig
+}) {
+  const siteName = afterConfig.siteTitle || 'Kardinal Pharmacy'
+  const siteUrl = getSiteUrl()
+  const adminUrl = `${siteUrl}/admin/panel`
+  const formattedTime = new Intl.DateTimeFormat('en', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Africa/Lagos',
+  }).format(new Date(editedAt))
+
+  await sendEmail({
+    to: SUPER_ADMIN,
+    subject: `${section} was edited on ${siteName}`,
+    text: [
+      `${actorEmail} edited ${section}.`,
+      '',
+      `Summary: ${summary}`,
+      `Time: ${formattedTime}`,
+      `Admin panel: ${adminUrl}`,
+    ].join('\n'),
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2933;">
+        <p><strong>${escapeHtml(actorEmail)}</strong> edited <strong>${escapeHtml(section)}</strong>.</p>
+        <p>
+          Summary: ${escapeHtml(summary)}<br>
+          Time: ${escapeHtml(formattedTime)}
+        </p>
+        <p>Admin panel: <a href="${escapeHtml(adminUrl)}">${escapeHtml(adminUrl)}</a></p>
       </div>
     `,
   })

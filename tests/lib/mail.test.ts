@@ -103,4 +103,33 @@ describe('mail helpers', () => {
     expect(body.text).toContain('https://www.kardinalpharmacy.com/admin/panel')
     expect(body.html).toContain('Kardinal &lt;Pharmacy&gt;')
   })
+
+  it('sends the super admin a report when site content is edited', async () => {
+    process.env = {
+      ...ORIGINAL_ENV,
+      RESEND_API_KEY: 'resend-key',
+      ADMIN_EMAIL_FROM: 'admin@kardinalpharmacy.com',
+      SITE_URL: 'https://www.kardinalpharmacy.com/',
+    }
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true })
+    vi.stubGlobal('fetch', fetchMock)
+    const { sendSiteEditReportEmail } = await import('@/lib/mail')
+
+    await sendSiteEditReportEmail({
+      actorEmail: 'editor<test>@kardinalpharmacy.com',
+      section: 'Hero',
+      summary: 'Updated <hero> copy.',
+      editedAt: '2026-05-04T10:30:00.000Z',
+      afterConfig: { siteTitle: 'Kardinal <Pharmacy>' },
+    } as Parameters<typeof sendSiteEditReportEmail>[0])
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body)
+    expect(body.to).toBe('aminumohammed@kardinalpharmacy.com')
+    expect(body.subject).toBe('Hero was edited on Kardinal <Pharmacy>')
+    expect(body.text).toContain('editor<test>@kardinalpharmacy.com edited Hero')
+    expect(body.text).toContain('Summary: Updated <hero> copy.')
+    expect(body.text).toContain('https://www.kardinalpharmacy.com/admin/panel')
+    expect(body.html).toContain('editor&lt;test&gt;@kardinalpharmacy.com')
+    expect(body.html).toContain('Updated &lt;hero&gt; copy.')
+  })
 })

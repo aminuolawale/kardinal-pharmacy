@@ -434,6 +434,13 @@ em { font-style: normal; color: var(--gold); }
   justify-content: space-between;
 }
 
+.admin-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 
 /* ══════════════════════════════════════════════
    SCROLL REVEAL
@@ -508,6 +515,10 @@ em { font-style: normal; color: var(--gold); }
   .admin-user-row {
     align-items: flex-start;
     gap: 12px;
+    flex-direction: column;
+  }
+  .admin-history-row {
+    align-items: stretch;
     flex-direction: column;
   }
   .admin-price-row { align-items: stretch; }

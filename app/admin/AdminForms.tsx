@@ -1,6 +1,6 @@
 'use client'
 import { useState, useTransition } from 'react'
-import type { SiteConfig, ListItem, ProductItem } from '@/lib/types'
+import type { SiteAuditLog, SiteConfig, ListItem, ProductItem } from '@/lib/types'
 import {
   saveSiteTitle,
   saveHero,
@@ -14,7 +14,7 @@ import {
 import { SUPER_ADMIN } from '@/lib/constants'
 
 /* ── Section nav ──────────────────────────────────────────── */
-type SectionId = 'site' | 'hero' | 'pharmacist' | 'services' | 'trust' | 'cosmetic' | 'users'
+type SectionId = 'site' | 'hero' | 'pharmacist' | 'services' | 'trust' | 'cosmetic' | 'users' | 'history'
 const BASE_SECTIONS: { id: SectionId; label: string }[] = [
   { id: 'site',        label: 'Site' },
   { id: 'hero',        label: 'Hero' },
@@ -755,19 +755,100 @@ function UsersSection({ initialAdmins }: { initialAdmins: string[] }) {
   )
 }
 
+function HistorySection({ logs }: { logs: SiteAuditLog[] }) {
+  const [isPending, startTransition] = useTransition()
+  const [message, setMessage] = useState('')
+
+  const restore = (id: string, snapshot: 'before' | 'after') => {
+    startTransition(async () => {
+      const response = await fetch('/api/admin/audit/rollback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, snapshot }),
+      })
+      const result = await response.json().catch(() => ({ restored: false, error: 'Rollback failed.' }))
+      if (result.restored) {
+        setMessage('Site restored. Reloading...')
+        window.location.reload()
+        return
+      }
+      setMessage(result.error ?? 'Rollback failed.')
+    })
+  }
+
+  return (
+    <SectionCard title="Change History">
+      <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 20 }}>
+        Site edits are recorded with the editor, timestamp, and full site snapshot. Restoring a version creates a new rollback entry.
+      </p>
+      {message && <p style={{ fontSize: '0.82rem', color: 'var(--green-700)', marginBottom: 12 }}>{message}</p>}
+      {logs.length === 0 ? (
+        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>No site changes have been recorded yet.</p>
+      ) : (
+        <div style={{ display: 'grid', gap: 10 }}>
+          {logs.map((log) => (
+            <div
+              key={log.id}
+              className="admin-history-row"
+              style={{
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-sm)',
+                padding: 14,
+                background: 'var(--white)',
+              }}
+            >
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.95rem' }}>
+                  {log.section}
+                </p>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-mid)', marginTop: 3 }}>
+                  {log.summary}
+                </p>
+                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 6 }}>
+                  {log.actorEmail} · {new Date(log.createdAt).toLocaleString()}
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => restore(log.id, 'before')}
+                  disabled={isPending}
+                  style={{ ...S.deleteBtn, opacity: isPending ? 0.6 : 1 }}
+                >
+                  Restore before
+                </button>
+                <button
+                  type="button"
+                  onClick={() => restore(log.id, 'after')}
+                  disabled={isPending}
+                  style={{ ...S.saveBtn, borderRadius: 'var(--radius-sm)', opacity: isPending ? 0.6 : 1 }}
+                >
+                  Restore after
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  )
+}
+
 /* ── Root ─────────────────────────────────────────────────── */
 export default function AdminForms({
   config,
   userEmail,
   admins,
+  auditLogs,
 }: {
   config: SiteConfig
   userEmail: string
   admins: string[]
+  auditLogs: SiteAuditLog[]
 }) {
   const isSuperAdmin = userEmail.toLowerCase() === SUPER_ADMIN.toLowerCase()
   const sections = isSuperAdmin
-    ? [...BASE_SECTIONS, { id: 'users' as SectionId, label: 'Users' }]
+    ? [...BASE_SECTIONS, { id: 'users' as SectionId, label: 'Users' }, { id: 'history' as SectionId, label: 'History' }]
     : BASE_SECTIONS
 
   const [active, setActive] = useState<SectionId>('site')
@@ -812,6 +893,7 @@ export default function AdminForms({
         {active === 'trust'      && <TrustSection       initial={config.trust}        />}
         {active === 'cosmetic'   && <CosmeticSection    initial={config.cosmeticLine} />}
         {active === 'users' && isSuperAdmin && <UsersSection initialAdmins={admins} />}
+        {active === 'history' && isSuperAdmin && <HistorySection logs={auditLogs} />}
       </div>
     </div>
   )

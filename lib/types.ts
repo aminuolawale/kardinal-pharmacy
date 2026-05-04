@@ -40,3 +40,13 @@ export type SiteConfig = {
     items: ProductItem[]
   }
 }
+
+export type SiteAuditLog = {
+  id: string
+  actorEmail: string
+  section: string
+  summary: string
+  createdAt: string
+  beforeConfig: SiteConfig
+  afterConfig: SiteConfig
+}
