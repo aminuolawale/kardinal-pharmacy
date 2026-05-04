@@ -2,34 +2,13 @@ import fs from 'fs/promises'
 import path from 'path'
 import { cache } from 'react'
 import { SUPER_ADMIN } from './constants'
+import { getSql } from './db'
 
 export { SUPER_ADMIN }
 const ADMINS_PATH = path.join(process.cwd(), 'data', 'admins.json')
-const ADMINS_KEY = 'kardinal:admins'
 
 type AdminsData = { emails: string[] }
 type AdminsInput = AdminsData | string[] | null | undefined
-
-function getKvConfig() {
-  const urlCandidates = [
-    process.env.KV_REST_API_URL,
-    process.env.UPSTASH_REDIS_REST_URL,
-    process.env.KV_REST_API_TOKEN,
-    process.env.UPSTASH_REDIS_REST_TOKEN,
-  ].filter((value): value is string => !!value)
-  const tokenCandidates = [
-    process.env.KV_REST_API_TOKEN,
-    process.env.UPSTASH_REDIS_REST_TOKEN,
-    process.env.KV_REST_API_URL,
-    process.env.UPSTASH_REDIS_REST_URL,
-  ].filter((value): value is string => !!value)
-
-  const url = urlCandidates.find((value) => value.startsWith('http'))
-  const token = tokenCandidates.find((value) => !value.startsWith('http'))
-  if (!url || !token) return null
-
-  return { url: url.replace(/\/$/, ''), token }
-}
 
 function normalizeAdmins(data: AdminsInput): AdminsData {
   const source = Array.isArray(data) ? data : data?.emails ?? []
@@ -54,49 +33,60 @@ async function readAdminsFromFile(): Promise<AdminsData> {
   }
 }
 
-async function readAdminsFromKv(): Promise<AdminsData | null> {
-  const kv = getKvConfig()
-  if (!kv) return null
+async function ensureAdminsTable(sql: NonNullable<ReturnType<typeof getSql>>) {
+  await sql`
+    create table if not exists admin_users (
+      email text primary key,
+      created_at timestamptz not null default now()
+    )
+  `
+}
 
-  const response = await fetch(`${kv.url}/get/${encodeURIComponent(ADMINS_KEY)}`, {
-    headers: { Authorization: `Bearer ${kv.token}` },
-    cache: 'no-store',
-  })
+async function readAdminsFromDb(): Promise<AdminsData | null> {
+  const sql = getSql()
+  if (!sql) return null
 
-  if (!response.ok) throw new Error(`Failed to read admins from KV: ${response.status}`)
+  await ensureAdminsTable(sql)
+  const rows = await sql`
+    select email
+    from admin_users
+    order by created_at asc, email asc
+  ` as { email: string }[]
 
-  const { result } = await response.json()
-  if (!result) {
+  if (rows.length === 0) {
     const fileAdmins = await readAdminsFromFile()
-    await saveAdminsToKv(fileAdmins)
+    await saveAdminsToDb(fileAdmins)
     return fileAdmins
   }
 
-  const parsed = typeof result === 'string' ? JSON.parse(result) : result
-  return normalizeAdmins(parsed as AdminsInput)
+  return normalizeAdmins({ emails: rows.map((row) => row.email) })
 }
 
-async function saveAdminsToKv(data: AdminsData): Promise<boolean> {
-  const kv = getKvConfig()
-  if (!kv) return false
+async function saveAdminsToDb(data: AdminsData): Promise<boolean> {
+  const sql = getSql()
+  if (!sql) return false
 
-  const value = encodeURIComponent(JSON.stringify(normalizeAdmins(data)))
-  const response = await fetch(`${kv.url}/set/${encodeURIComponent(ADMINS_KEY)}/${value}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${kv.token}` },
-  })
+  const { emails } = normalizeAdmins(data)
+  await ensureAdminsTable(sql)
+  await sql`delete from admin_users`
 
-  if (!response.ok) throw new Error(`Failed to save admins to KV: ${response.status}`)
+  for (const email of emails) {
+    await sql`
+      insert into admin_users (email)
+      values (${email})
+      on conflict (email) do nothing
+    `
+  }
   return true
 }
 
 /** Plain read — safe to call outside a React render (e.g. in auth callbacks). */
 export async function readAdmins(): Promise<AdminsData> {
   try {
-    const kvAdmins = await readAdminsFromKv()
-    if (kvAdmins) return kvAdmins
+    const dbAdmins = await readAdminsFromDb()
+    if (dbAdmins) return dbAdmins
   } catch (error) {
-    console.error('Failed to read admins from KV; falling back to local admin file', error)
+    console.error('Failed to read admins from Neon; falling back to local admin file', error)
   }
 
   return readAdminsFromFile()
@@ -106,6 +96,6 @@ export async function readAdmins(): Promise<AdminsData> {
 export const getAdmins = cache(readAdmins)
 
 export async function saveAdmins(data: AdminsData): Promise<void> {
-  if (await saveAdminsToKv(data)) return
+  if (await saveAdminsToDb(data)) return
   await fs.writeFile(ADMINS_PATH, JSON.stringify(normalizeAdmins(data), null, 2), 'utf-8')
 }

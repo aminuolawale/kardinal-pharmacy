@@ -3,11 +3,20 @@ import os from 'os'
 import path from 'path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { getSqlMock } = vi.hoisted(() => ({
+  getSqlMock: vi.fn(),
+}))
+
+vi.mock('@/lib/db', () => ({
+  getSql: getSqlMock,
+}))
+
 const ORIGINAL_CWD = process.cwd()
 let tempDir: string
 
 beforeEach(async () => {
   vi.resetModules()
+  getSqlMock.mockReturnValue(null)
   tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'kardinal-admins-'))
   await fs.mkdir(path.join(tempDir, 'data'))
   process.chdir(tempDir)
@@ -16,10 +25,7 @@ beforeEach(async () => {
 afterEach(async () => {
   process.chdir(ORIGINAL_CWD)
   await fs.rm(tempDir, { recursive: true, force: true })
-  delete process.env.KV_REST_API_URL
-  delete process.env.KV_REST_API_TOKEN
-  delete process.env.UPSTASH_REDIS_REST_URL
-  delete process.env.UPSTASH_REDIS_REST_TOKEN
+  getSqlMock.mockReset()
   vi.resetModules()
 })
 
@@ -54,102 +60,53 @@ describe('admin storage', () => {
     }, null, 2))
   })
 
-  it('reads and writes admins through Vercel KV when configured', async () => {
-    process.env.KV_REST_API_URL = 'https://kv.example.com'
-    process.env.KV_REST_API_TOKEN = 'kv-token'
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ result: JSON.stringify({ emails: ['kv@example.com'] }) }),
-      })
-      .mockResolvedValueOnce({ ok: true })
-    vi.stubGlobal('fetch', fetchMock)
+  it('reads admins from Neon when a database is configured', async () => {
+    const sqlMock = vi.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce([{ email: 'db@example.com' }])
+    getSqlMock.mockReturnValue(sqlMock)
     const { readAdmins, saveAdmins } = await import('@/lib/admins')
 
     await expect(readAdmins()).resolves.toEqual({
-      emails: ['aminumohammed@kardinalpharmacy.com', 'kv@example.com'],
+      emails: ['aminumohammed@kardinalpharmacy.com', 'db@example.com'],
     })
+    expect(sqlMock).toHaveBeenCalledTimes(2)
+
+    sqlMock.mockClear()
     await saveAdmins({ emails: ['saved@example.com'] })
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://kv.example.com/get/kardinal%3Aadmins',
-      expect.objectContaining({
-        headers: { Authorization: 'Bearer kv-token' },
-        cache: 'no-store',
-      }),
-    )
-    expect(fetchMock.mock.calls[1][0]).toContain('https://kv.example.com/set/kardinal%3Aadmins/')
+    expect(sqlMock).toHaveBeenCalledTimes(4)
   })
 
-  it('bootstraps empty Upstash storage from the local admin file', async () => {
+  it('bootstraps empty Neon storage from the local admin file', async () => {
     await fs.writeFile(
       path.join(tempDir, 'data', 'admins.json'),
       JSON.stringify({ emails: ['file@example.com'] }),
     )
-    process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'upstash-token'
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ result: null }) })
-      .mockResolvedValueOnce({ ok: true })
-    vi.stubGlobal('fetch', fetchMock)
+    const sqlMock = vi.fn()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce([])
+      .mockResolvedValue(undefined)
+    getSqlMock.mockReturnValue(sqlMock)
     const { readAdmins } = await import('@/lib/admins')
 
     await expect(readAdmins()).resolves.toEqual({
       emails: ['aminumohammed@kardinalpharmacy.com', 'file@example.com'],
     })
-    expect(fetchMock).toHaveBeenCalledTimes(2)
-    expect(fetchMock.mock.calls[1][0]).toContain('https://upstash.example.com/set/kardinal%3Aadmins/')
+    expect(sqlMock).toHaveBeenCalledTimes(6)
   })
 
-  it('falls back to the local admin file if Upstash is unreachable', async () => {
+  it('falls back to the local admin file if Neon is unreachable', async () => {
     await fs.writeFile(
       path.join(tempDir, 'data', 'admins.json'),
       JSON.stringify({ emails: ['file@example.com'] }),
     )
-    process.env.UPSTASH_REDIS_REST_URL = 'https://upstash.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'bad-token'
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 401 }))
+    getSqlMock.mockReturnValue(vi.fn().mockRejectedValue(new Error('db down')))
     vi.spyOn(console, 'error').mockImplementation(() => {})
     const { readAdmins } = await import('@/lib/admins')
 
     await expect(readAdmins()).resolves.toEqual({
       emails: ['aminumohammed@kardinalpharmacy.com', 'file@example.com'],
     })
-  })
-
-  it('detects and corrects swapped Upstash URL and token env values', async () => {
-    process.env.UPSTASH_REDIS_REST_URL = 'upstash-token-value'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'https://upstash.example.com'
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ result: JSON.stringify({ emails: ['kv@example.com'] }) }),
-      })
-    vi.stubGlobal('fetch', fetchMock)
-    const { readAdmins } = await import('@/lib/admins')
-
-    await expect(readAdmins()).resolves.toEqual({
-      emails: ['aminumohammed@kardinalpharmacy.com', 'kv@example.com'],
-    })
-    expect(fetchMock).toHaveBeenCalledWith(
-      'https://upstash.example.com/get/kardinal%3Aadmins',
-      expect.objectContaining({
-        headers: { Authorization: 'Bearer upstash-token-value' },
-      }),
-    )
-  })
-
-  it('ignores token-only Upstash env values and keeps local writes working', async () => {
-    process.env.UPSTASH_REDIS_REST_URL = 'token-shaped-value'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'another-token-shaped-value'
-    const { saveAdmins } = await import('@/lib/admins')
-
-    await saveAdmins({ emails: ['local@example.com'] })
-
-    const raw = await fs.readFile(path.join(tempDir, 'data', 'admins.json'), 'utf-8')
-    expect(raw).toBe(JSON.stringify({
-      emails: ['aminumohammed@kardinalpharmacy.com', 'local@example.com'],
-    }, null, 2))
   })
 })
