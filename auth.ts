@@ -21,8 +21,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       const email = user.email.toLowerCase()
       if (email === SUPER_ADMIN.toLowerCase()) return true
       const { emails } = await readAdmins()
-      const isAdmin = emails.some(e => e.toLowerCase() === email)
-      if (!isAdmin) return false
+      const isListedAdmin = emails.some((adminEmail) => adminEmail.toLowerCase() === email)
+      if (!isListedAdmin) return false
 
       try {
         await sendAdminSignedInEmail(email)

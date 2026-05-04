@@ -3,49 +3,55 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function Nav() {
-  const [scrolled, setScrolled]   = useState(false)
-  const [menuOpen, setMenuOpen]   = useState(false)
-  const [clickCount, setClickCount] = useState(0)
+  const [hasScrolled, setHasScrolled] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [adminShortcutClicks, setAdminShortcutClicks] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onScroll = () => setHasScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Reset click count after 2 seconds of inactivity
+  // Keep the hidden admin shortcut intentional by requiring four quick clicks.
   useEffect(() => {
-    if (clickCount === 0) return
-    const timer = setTimeout(() => setClickCount(0), 2000)
+    if (adminShortcutClicks === 0) return
+    const timer = setTimeout(() => setAdminShortcutClicks(0), 2000)
     return () => clearTimeout(timer)
-  }, [clickCount])
+  }, [adminShortcutClicks])
+
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [])
 
   const handleSpacerClick = () => {
-    const nextCount = clickCount + 1
-    if (nextCount === 4) {
+    const nextClickCount = adminShortcutClicks + 1
+    if (nextClickCount === 4) {
       router.push('/admin/login')
-      setClickCount(0)
+      setAdminShortcutClicks(0)
     } else {
-      setClickCount(nextCount)
+      setAdminShortcutClicks(nextClickCount)
     }
   }
 
   const openMenu = () => {
-    setMenuOpen(true)
+    setIsMenuOpen(true)
     document.body.style.overflow = 'hidden'
   }
 
   const closeMenu = () => {
-    setMenuOpen(false)
+    setIsMenuOpen(false)
     document.body.style.overflow = ''
   }
 
-  const toggle = () => (menuOpen ? closeMenu() : openMenu())
+  const toggleMenu = () => (isMenuOpen ? closeMenu() : openMenu())
 
   return (
     <>
-      <header className={`nav-wrapper${scrolled ? ' scrolled' : ''}`}>
+      <header className={`nav-wrapper${hasScrolled ? ' scrolled' : ''}`}>
         <nav className="nav container">
           <a href="#home" className="logo">
             <svg className="logo__cross" width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
@@ -67,17 +73,17 @@ export default function Nav() {
           <a href="#location" className="btn btn--primary nav__cta">Consult Now</a>
 
           <button
-            className={`hamburger${menuOpen ? ' open' : ''}`}
-            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={menuOpen}
-            onClick={toggle}
+            className={`hamburger${isMenuOpen ? ' open' : ''}`}
+            aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={isMenuOpen}
+            onClick={toggleMenu}
           >
             <span /><span /><span />
           </button>
         </nav>
       </header>
 
-      <div className={`mobile-menu${menuOpen ? ' open' : ''}`} aria-hidden={!menuOpen}>
+      <div className={`mobile-menu${isMenuOpen ? ' open' : ''}`} aria-hidden={!isMenuOpen}>
         <ul role="list">
           <li><a href="#services" onClick={closeMenu}>Services</a></li>
           <li><a href="#about"    onClick={closeMenu}>About</a></li>

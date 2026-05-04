@@ -47,6 +47,17 @@ describe('client navigation', () => {
     expect(document.body.style.overflow).toBe('')
   })
 
+  it('clears body overflow when the nav unmounts with the mobile menu open', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<Nav />)
+
+    await user.click(screen.getByRole('button', { name: 'Open menu' }))
+    expect(document.body.style.overflow).toBe('hidden')
+
+    unmount()
+    expect(document.body.style.overflow).toBe('')
+  })
+
   it('routes to the admin login after four spacer clicks', () => {
     const { container } = render(<Nav />)
     const spacer = container.querySelector('.nav__spacer')

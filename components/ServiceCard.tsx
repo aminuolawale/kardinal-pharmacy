@@ -1,0 +1,21 @@
+import type { ListItem } from '@/lib/types'
+
+function CrossIcon() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect x="11" y="3" width="6" height="22" rx="2" fill="currentColor" />
+      <rect x="3" y="11" width="22" height="6" rx="2" fill="currentColor" />
+    </svg>
+  )
+}
+
+export default function ServiceCard({ item, index }: { item: ListItem; index: number }) {
+  return (
+    <div className={`service-card reveal${index === 1 ? ' reveal--delay' : index === 2 ? ' reveal--delay-2' : ''}`}>
+      <div className="service-card__icon"><CrossIcon /></div>
+      <h3>{item.title}</h3>
+      <p>{item.description}</p>
+      <a href="#location" className="text-link">Book a session &rarr;</a>
+    </div>
+  )
+}
