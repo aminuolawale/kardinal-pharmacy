@@ -1,12 +1,11 @@
 'use server'
-import fs from 'fs/promises'
-import path from 'path'
 import { revalidatePath } from 'next/cache'
 import { auth, signOut } from '@/auth'
 import { redirect } from 'next/navigation'
 import { getConfig, saveConfig } from '@/lib/config'
 import { getAdmins, saveAdmins, SUPER_ADMIN } from '@/lib/admins'
 import { recordSiteEdit } from '@/lib/audit'
+import { storeImage } from '@/lib/uploads'
 import { sendNewAdminEmail, sendSiteEditReportEmail } from '@/lib/mail'
 import type { SiteConfig } from '@/lib/types'
 
@@ -159,13 +158,7 @@ export async function uploadAvatar(formData: FormData) {
   const file = formData.get('avatar') as File
   if (!file || file.size === 0) return
 
-  const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
-  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
-  const filename = `pharmacist-avatar.${safeExt}`
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-
-  await fs.mkdir(uploadDir, { recursive: true })
-  await fs.writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()))
+  const avatarUrl = await storeImage(file, 'pharmacist-avatar')
 
   const config = await getConfig()
   await saveAuditedConfig({
@@ -175,7 +168,7 @@ export async function uploadAvatar(formData: FormData) {
     beforeConfig: config,
     afterConfig: {
       ...config,
-      pharmacist: { ...config.pharmacist, avatarUrl: `/uploads/${filename}` },
+      pharmacist: { ...config.pharmacist, avatarUrl },
     },
   })
 }
@@ -219,13 +212,5 @@ export async function uploadProductImage(formData: FormData): Promise<string> {
   const file = formData.get('image') as File
   if (!file || file.size === 0) return ''
 
-  const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase()
-  const safeExt = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) ? ext : 'jpg'
-  const filename = `product-${Date.now()}.${safeExt}`
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products')
-
-  await fs.mkdir(uploadDir, { recursive: true })
-  await fs.writeFile(path.join(uploadDir, filename), Buffer.from(await file.arrayBuffer()))
-
-  return `/uploads/products/${filename}`
+  return storeImage(file, 'product')
 }
